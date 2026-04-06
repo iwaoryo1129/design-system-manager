@@ -1600,7 +1600,7 @@ function App() {
     HOW TO USE THIS FILE
     - Paste the <style> block into your project's base CSS.
     - All tokens are CSS custom properties (var(--color-primary) etc.).
-    - The <script type="application/json"> block contains the full
+    - The <script type="application/json"> block (in the output file) contains the full
       token set as structured JSON for AI / tooling consumption.
     ============================================================
   -->
@@ -1729,7 +1729,7 @@ function App() {
   -->
   <script type="application/json" id="design-system-tokens">
 ${JSON.stringify(tokenData, null, 2)}
-  </script>
+  <\/script>
 
 </body>
 </html>`;
