@@ -694,8 +694,146 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
 }
 
 /* ─────────────────────────────────────────────────────────
-   Preview: NavBar
+   Doc-style Preview Components
 ───────────────────────────────────────────────────────── */
+function DocSectionHeader({ num, title, desc, textColor, subColor, lineColor }) {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr", gap:48, alignItems:"start" }}>
+        <div>
+          <p style={{ fontSize:12, fontWeight:500, color:subColor, marginBottom:8, letterSpacing:"0.06em" }}>{num}</p>
+          <h2 style={{ fontSize:36, fontWeight:700, color:textColor, lineHeight:1.15, letterSpacing:"-0.02em", margin:0 }}>{title}</h2>
+        </div>
+        <div style={{ paddingTop:38 }}>
+          <p style={{ fontSize:14, color:textColor, lineHeight:1.85, opacity:0.65, margin:0 }}>{desc}</p>
+        </div>
+      </div>
+      <div style={{ height:1, background:lineColor, marginTop:32 }} />
+    </div>
+  );
+}
+
+function DocColorGrid({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const colors = [
+    { token:"brand.primary",   hex:t.primary,    desc:"プライマリー" },
+    { token:"brand.secondary", hex:t.secondary,  desc:"セカンダリー" },
+    { token:"brand.accent",    hex:t.accent,     desc:"アクセント" },
+    { token:"brand.bg",        hex:t.background, desc:"背景" },
+    { token:"brand.text",      hex:t.text,       desc:"テキスト" },
+    { token:"brand.line",      hex:t.line,       desc:"ライン / ボーダー" },
+  ];
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", border:"1px solid "+t.line, overflow:"hidden" }}>
+      {colors.map((c, i) => {
+        const rightBorder = (i+1) % 3 !== 0 ? "1px solid "+t.line : "none";
+        const bottomBorder = i < 3 ? "1px solid "+t.line : "none";
+        return (
+          <div key={c.token} style={{ borderRight:rightBorder, borderBottom:bottomBorder }}>
+            <div style={{ height:110, background:c.hex }} />
+            <div style={{ padding:"14px 16px", background:t.background }}>
+              <p style={{ fontSize:11, color:sub, marginBottom:5, fontFamily:"monospace", margin:"0 0 5px" }}>{c.token}</p>
+              <p style={{ fontSize:15, fontWeight:700, color:t.text, fontFamily:"monospace", margin:"0 0 4px" }}>{c.hex.toUpperCase()}</p>
+              <p style={{ fontSize:12, color:sub, margin:0 }}>{c.desc}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DocFontSpecimen({ t, mode, fonts }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", border:"1px solid "+t.line, overflow:"hidden", marginBottom:16 }}>
+      <div style={{ padding:"24px 28px", borderRight:"1px solid "+t.line, background:t.background }}>
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>日本語 — JAPANESE</p>
+        <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.ja.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>あア日本語</p>
+        <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.ja.name} · --font-jp</p>
+      </div>
+      <div style={{ padding:"24px 28px", background:t.background }}>
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>欧文 — LATIN</p>
+        <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.en.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>Aa Bb Cc</p>
+        <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.en.name} · --font-latin</p>
+      </div>
+    </div>
+  );
+}
+
+function DocTypeTable({ t, mode, fonts }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const headerBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
+  const rows = [
+    { pt:64, lh:"140%", sample:"見出し大",           role:"ヒーロー",   w:700 },
+    { pt:48, lh:"140%", sample:"ページタイトル",     role:"h1",         w:700 },
+    { pt:32, lh:"140%", sample:"セクション見出し",   role:"h2",         w:600 },
+    { pt:18, lh:"180%", sample:"素早い茶色の狐は怠惰な犬を飛び越えます", role:"本文大", w:400 },
+    { pt:16, lh:"160%", sample:"タイポグラフィは文字を美しく整える技術です", role:"本文", w:400 },
+    { pt:14, lh:"160%", sample:"良いデザインはできる限りシンプルです",   role:"本文小", w:400 },
+    { pt:12, lh:"140%", sample:"キャプション — サイズ12pt · 行間140%", role:"caption", w:400 },
+  ];
+  const cols = "80px 70px 1fr 90px";
+  const hdCell = (label, last) => (
+    <div style={{
+      padding:"0 14px", display:"flex", alignItems:"center",
+      fontSize:12, fontWeight:600, color:t.text,
+      borderRight: last ? "none" : "1px solid "+t.line,
+    }}>{label}</div>
+  );
+  return (
+    <div style={{ border:"1px solid "+t.line, overflow:"hidden" }}>
+      <div style={{ display:"grid", gridTemplateColumns:cols, height:40, background:headerBg, borderBottom:"1px solid "+t.line }}>
+        {hdCell("サイズ")} {hdCell("行間")} {hdCell("サンプル")} {hdCell("用途", true)}
+      </div>
+      {rows.map((row, i) => {
+        const px = Math.min(Math.round(row.pt * PT), 60);
+        return (
+          <div key={row.pt} style={{
+            display:"grid", gridTemplateColumns:cols,
+            borderBottom: i < rows.length-1 ? "1px solid "+t.line : "none",
+            background:t.background, minHeight:52, alignItems:"center",
+          }}>
+            <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.pt}pt</div>
+            <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.lh}</div>
+            <div style={{ padding:"8px 14px", borderRight:"1px solid "+t.line, overflow:"hidden" }}>
+              <span style={{
+                fontSize:px, fontWeight:row.w,
+                fontFamily:fonts.ja.name+", sans-serif",
+                color:t.text, lineHeight:1.25,
+                display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+              }}>{row.sample}</span>
+            </div>
+            <div style={{ padding:"0 14px", fontSize:12, color:sub, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.role}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DocPreview({ t, mode, fonts, meta }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  return (
+    <div style={{ maxWidth:880, margin:"0 auto", padding:"56px 0 80px" }}>
+      <section style={{ marginBottom:80 }}>
+        <DocSectionHeader num="01" title="カラー"
+          desc="使用するカラーはこの6値のみ。派生カラーやグラデーションは使用しない。"
+          textColor={t.text} subColor={sub} lineColor={t.line} />
+        <DocColorGrid t={t} mode={mode} />
+      </section>
+      <section style={{ marginBottom:80 }}>
+        <DocSectionHeader num="02" title="タイポグラフィ"
+          desc={"日本語に "+fonts.ja.name+"、欧文に "+fonts.en.name+"。サイズと行間は下表の値のみ使用する。"}
+          textColor={t.text} subColor={sub} lineColor={t.line} />
+        <DocFontSpecimen t={t} mode={mode} fonts={fonts} />
+        <DocTypeTable t={t} mode={mode} fonts={fonts} />
+      </section>
+    </div>
+  );
+}
+
+/* ─── legacy preview (unused — kept for reference) ─── */
 function PvNavBar({ t, mode, meta }) {
   const [hov, setHov] = React.useState(null);
   const shadow = mode === "light" ? "0 1px 4px rgba(0,0,0,0.08)" : "none";
@@ -1164,14 +1302,8 @@ function App() {
         </div>
 
         {/* Scrollable preview */}
-        <div style={{ flex:1, overflowY:"auto", padding:"24px 32px", background:t.background }}>
-          <div style={{ maxWidth:760, margin:"0 auto" }}>
-            <PvNavBar  t={t} mode={mode} meta={meta} />
-            <PvTypo    t={t} mode={mode} fonts={fonts} />
-            <PvButtons t={t} mode={mode} />
-            <PvCards   t={t} mode={mode} />
-            <div style={{ height:40 }} />
-          </div>
+        <div style={{ flex:1, overflowY:"auto", padding:"0 48px", background:t.background }}>
+          <DocPreview t={t} mode={mode} fonts={fonts} meta={meta} />
         </div>
       </div>
     </div>
