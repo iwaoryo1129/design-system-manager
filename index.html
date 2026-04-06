@@ -812,22 +812,339 @@ function DocTypeTable({ t, mode, fonts }) {
   );
 }
 
+/* ─── DocHeader ─── */
+function DocHeader({ t, mode, meta }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const colors = [
+    { label:"Text",       hex:t.text },
+    { label:"Background", hex:t.background },
+    { label:"Primary",    hex:t.primary },
+    { label:"Secondary",  hex:t.secondary },
+    { label:"Accent",     hex:t.accent },
+    { label:"Line",       hex:t.line },
+  ];
+  return (
+    <div style={{ paddingBottom:32, marginBottom:8 }}>
+      <p style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", color:t.accent, marginBottom:16, textTransform:"uppercase" }}>
+        {meta.name || "Design System"}{meta.company ? " — "+meta.company : ""}
+      </p>
+      <div style={{ display:"flex", gap:24, flexWrap:"wrap" }}>
+        {colors.map(c => (
+          <div key={c.label} style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ width:11, height:11, background:c.hex, border:"1px solid "+t.line, borderRadius:2, flexShrink:0 }} />
+            <span style={{ fontSize:11, color:sub }}>{c.label}</span>
+            <span style={{ fontSize:11, fontFamily:"monospace", color:t.text, opacity:0.7 }}>{c.hex.toUpperCase()}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DocStats ─── */
+function DocStats({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const stats = [
+    { num:6,                         label:"カラー" },
+    { num:8,                         label:"スペーシング (px)" },
+    { num:Object.keys(TYPO).length,  label:"タイプサイズ" },
+    { num:t.rMd+"px",               label:"角丸 (md)" },
+  ];
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", marginBottom:64, border:"1px solid "+t.line, overflow:"hidden" }}>
+      {stats.map((s,i) => (
+        <div key={s.label} style={{
+          padding:"24px 20px",
+          borderRight: i < stats.length-1 ? "1px solid "+t.line : "none",
+          background:t.background,
+        }}>
+          <p style={{ fontSize:40, fontWeight:700, color:t.text, margin:"0 0 6px", lineHeight:1 }}>{s.num}</p>
+          <p style={{ fontSize:12, color:sub, margin:0 }}>{s.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── DocSpacing ─── */
+function DocSpacing({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const headerBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
+  const spacings = [
+    { key:"--sp-4",  px:4,  desc:"デザイン間隔・ラベル" },
+    { key:"--sp-8",  px:8,  desc:"インプットのパディング" },
+    { key:"--sp-16", px:16, desc:"カードのパディング" },
+    { key:"--sp-24", px:24, desc:"セクションの区切り" },
+    { key:"--sp-40", px:40, desc:"コンポーネント間" },
+    { key:"--sp-56", px:56, desc:"サブセクション間" },
+    { key:"--sp-72", px:72, desc:"セクション間" },
+    { key:"--sp-96", px:96, desc:"ページレベルの余白" },
+  ];
+  const cols = "120px 56px 1fr 1fr";
+  const hd = (label, last) => (
+    <div style={{ padding:"0 14px", display:"flex", alignItems:"center", fontSize:12, fontWeight:600, color:t.text, borderRight:last?"none":"1px solid "+t.line }}>{label}</div>
+  );
+  return (
+    <div style={{ border:"1px solid "+t.line, overflow:"hidden" }}>
+      <div style={{ display:"grid", gridTemplateColumns:cols, height:40, background:headerBg, borderBottom:"1px solid "+t.line }}>
+        {hd("キーネーム")} {hd("値")} {hd("スケール")} {hd("主な用途", true)}
+      </div>
+      {spacings.map((s,i) => (
+        <div key={s.key} style={{ display:"grid", gridTemplateColumns:cols, borderBottom:i<spacings.length-1?"1px solid "+t.line:"none", background:t.background, height:44, alignItems:"center" }}>
+          <div style={{ padding:"0 14px", fontSize:12, fontFamily:"monospace", color:t.text, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{s.key}</div>
+          <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{s.px}px</div>
+          <div style={{ padding:"0 14px", borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>
+            <div style={{ height:8, width:Math.round((s.px/96)*160), background:t.accent, borderRadius:2, maxWidth:"100%" }} />
+          </div>
+          <div style={{ padding:"0 14px", fontSize:12, color:sub }}>{s.desc}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── DocButtons ─── */
+function DocButtons({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const border = "1px solid "+t.line;
+  function Btn({ label, bg, color, bdr, icon, size }) {
+    const pad = size==="sm" ? "4px 10px" : size==="lg" ? "10px 22px" : "7px 16px";
+    const fs  = size==="sm" ? 11 : size==="lg" ? 15 : 13;
+    return (
+      <button style={{ background:bg, color, border:bdr||"none", padding:pad, borderRadius:t.rSm, fontSize:fs, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
+        {icon && <Icon name={icon} size={fs} color={color} />}
+        {label}
+      </button>
+    );
+  }
+  const lbl = { width:88, flexShrink:0, fontSize:11, color:sub, padding:"14px 16px", borderRight:border, alignSelf:"stretch", display:"flex", alignItems:"center" };
+  const row = (last) => ({ display:"flex", alignItems:"center", borderBottom:last?"none":border });
+  return (
+    <div style={{ border, overflow:"hidden" }}>
+      <div style={row()}>
+        <div style={lbl}>バリアント</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+          <Btn label="プライマリ" bg={t.primary} color="white" />
+          <Btn label="セカンダリ" bg={t.secondary} color="white" />
+          <Btn label="アクセント" bg={t.accent} color="white" />
+          <Btn label="ゴースト" bg="transparent" color={t.text} bdr={"1.5px solid "+t.line} />
+        </div>
+      </div>
+      <div style={row()}>
+        <div style={lbl}>サイズ</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center" }}>
+          <Btn label="小 (sm)" bg={t.primary} color="white" size="sm" />
+          <Btn label="標準" bg={t.primary} color="white" />
+          <Btn label="大 (lg)" bg={t.primary} color="white" size="lg" />
+        </div>
+      </div>
+      <div style={row(true)}>
+        <div style={lbl}>ステート</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+          <Btn label="デフォルト" bg={t.accent} color="white" />
+          <Btn label="ホバー" bg="transparent" color={t.accent} bdr={"1.5px solid "+t.accent} />
+          <Btn label="ダウンロード" bg={t.primary} color="white" icon="download" />
+          <Btn label="ライブ" bg="transparent" color={sub} bdr={"1.5px solid "+t.line} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DocBadges ─── */
+function DocBadges({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const border = "1px solid "+t.line;
+  function Badge({ label, bg, color, bdr }) {
+    return (
+      <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 9px", borderRadius:99, fontSize:11, fontWeight:600, background:bg, color, border:bdr||"none" }}>{label}</span>
+    );
+  }
+  const lbl = { width:88, flexShrink:0, fontSize:11, color:sub, padding:"14px 16px", borderRight:border, alignSelf:"stretch", display:"flex", alignItems:"center" };
+  const row = (last) => ({ display:"flex", alignItems:"center", borderBottom:last?"none":border });
+  const lg = (c) => mode==="light" ? c[0] : c[1];
+  return (
+    <div style={{ border, overflow:"hidden" }}>
+      <div style={row()}>
+        <div style={lbl}>バリアント</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <Badge label="アクセント" bg={t.accent} color="white" />
+          <Badge label="アウトライン" bg="transparent" color={t.text} bdr={"1.5px solid "+t.line} />
+          <Badge label="塗りつぶし" bg={t.primary} color="white" />
+        </div>
+      </div>
+      <div style={row()}>
+        <div style={lbl}>ステータス</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <Badge label="アクティブ"  bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}  color={lg(["#15803d","#4ade80"])} />
+          <Badge label="非接続中"    bg={lg(["#fef9c3","rgba(234,179,8,0.15)"])}   color={lg(["#a16207","#facc15"])} />
+          <Badge label="オフライン"  bg={lg(["#f1f5f9","rgba(148,163,184,0.15)"])} color={sub} />
+        </div>
+      </div>
+      <div style={row(true)}>
+        <div style={lbl}>ラベル</div>
+        <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <Badge label="v1.0"   bg={t.accent} color="white" />
+          <Badge label="公開済み" bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}   color={lg(["#15803d","#4ade80"])} />
+          <Badge label="下書き"  bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])}  color={sub} />
+          <Badge label="非推奨"  bg={lg(["#fef2f2","rgba(239,68,68,0.1)"])}    color={lg(["#dc2626","#f87171"])} />
+          <Badge label="ベータ"  bg={lg(["#eff6ff","rgba(96,165,250,0.15)"])}  color={lg(["#1d4ed8","#60a5fa"])} />
+          <Badge label="アーカイブ" bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])} color={sub} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DocForm ─── */
+function DocForm({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const border = "1px solid "+t.line;
+  const inputBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
+  const inputSt = { width:"100%", padding:"8px 12px", fontSize:13, background:inputBg, color:t.text, border:"1.5px solid "+t.line, borderRadius:t.rSm, outline:"none" };
+  const [checks, setChecks] = React.useState({ mail:true, push:false, digest:true });
+  const [togs,   setTogs]   = React.useState({ dark:false, beta:false, analytics:true });
+
+  function Chk({ id, label, checked, onChange }) {
+    return (
+      <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom:10 }}>
+        <div onClick={() => onChange(!checked)} style={{
+          width:16, height:16, borderRadius:3, flexShrink:0,
+          border:"1.5px solid "+(checked ? t.accent : t.line),
+          background: checked ? t.accent : "transparent",
+          display:"flex", alignItems:"center", justifyContent:"center",
+        }}>
+          {checked && <Icon name="check" size={10} color="white" strokeWidth={3} />}
+        </div>
+        <span style={{ fontSize:13, color:t.text }}>{label}</span>
+      </label>
+    );
+  }
+  function Tog({ label, on, onChange }) {
+    return (
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+        <span style={{ fontSize:13, color:t.text }}>{label}</span>
+        <div className={"toggle-track "+(on?"toggle-on":"")} style={{ background:on ? t.accent : t.line }} onClick={() => onChange(!on)}>
+          <div className="toggle-thumb" />
+        </div>
+      </div>
+    );
+  }
+  const fld = (label, el) => (
+    <div style={{ marginBottom:14 }}>
+      <p style={{ fontSize:11, color:sub, margin:"0 0 5px" }}>{label}</p>
+      {el}
+    </div>
+  );
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", border, overflow:"hidden" }}>
+      <div style={{ padding:24 }}>
+        {fld("メールアドレス", <input type="email" placeholder="name@company.com" style={inputSt} readOnly />)}
+        {fld("パスワード", <input type="password" placeholder="••••••••" style={inputSt} readOnly />)}
+        {fld("X月までに完成させてください", <textarea rows={3} placeholder="詳細を入力..." style={{ ...inputSt, resize:"none", display:"block" }} readOnly />)}
+        {fld("役割", <select style={{ ...inputSt, cursor:"pointer" }}><option>デザイナー</option><option>エンジニア</option></select>)}
+        {fld("現在地", <input type="text" placeholder="都市名" style={inputSt} readOnly />)}
+      </div>
+      <div style={{ padding:24, borderLeft:border }}>
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 14px" }}>通知設定</p>
+        <Chk label="メール通知"     checked={checks.mail}   onChange={v => setChecks(p => ({...p, mail:v}))} />
+        <Chk label="プッシュ通知"   checked={checks.push}   onChange={v => setChecks(p => ({...p, push:v}))} />
+        <Chk label="週次ダイジェスト" checked={checks.digest} onChange={v => setChecks(p => ({...p, digest:v}))} />
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"20px 0 14px" }}>機能フラグ</p>
+        <Tog label="ダークモード"   on={togs.dark}      onChange={v => setTogs(p => ({...p, dark:v}))} />
+        <Tog label="ベータ機能"     on={togs.beta}      onChange={v => setTogs(p => ({...p, beta:v}))} />
+        <Tog label="アナリティクス" on={togs.analytics}  onChange={v => setTogs(p => ({...p, analytics:v}))} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── DocNav ─── */
+function DocNav({ t, mode }) {
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const border = "1px solid "+t.line;
+  const [activeTab, setActiveTab] = React.useState("概要");
+  const tabs = ["概要","コンポーネント","トークン","変更履歴"];
+  return (
+    <div>
+      <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 12px" }}>タブ</p>
+      <div style={{ border, overflow:"hidden", marginBottom:24 }}>
+        <div style={{ display:"flex", borderBottom:border, background:t.background, padding:"0 4px" }}>
+          {tabs.map(tab => {
+            const active = tab === activeTab;
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                padding:"10px 14px", fontSize:13, fontWeight:active?700:400,
+                color:active ? t.accent : t.text, opacity:active?1:0.55,
+                background:"transparent", border:"none", cursor:"pointer",
+                borderBottom:"2px solid "+(active ? t.accent : "transparent"),
+                marginBottom:-1, transition:"all 0.15s ease",
+              }}>{tab}</button>
+            );
+          })}
+        </div>
+        <div style={{ padding:16, background:t.background, fontSize:13, color:t.text, opacity:0.65 }}>
+          タブパネルのコンテンツがここに表示されます。
+        </div>
+      </div>
+      <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 12px" }}>パンくずリスト</p>
+      <div style={{ border, borderRadius:t.rSm, padding:"12px 16px", background:t.background, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+        {["ホーム","コンポーネント","ナビゲーション","パンくずリスト"].map((item,i,arr) => (
+          <React.Fragment key={item}>
+            <span style={{ fontSize:13, color:i===arr.length-1 ? t.text : t.accent, fontWeight:i===arr.length-1?600:400, cursor:i<arr.length-1?"pointer":"default", opacity:i===arr.length-1?1:0.85 }}>{item}</span>
+            {i < arr.length-1 && <span style={{ fontSize:11, color:sub }}>›</span>}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DocPreview ─── */
 function DocPreview({ t, mode, fonts, meta }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
+  const sec = (n, title, desc) => (
+    <DocSectionHeader num={n} title={title} desc={desc} textColor={t.text} subColor={sub} lineColor={t.line} />
+  );
   return (
-    <div style={{ maxWidth:880, margin:"0 auto", padding:"56px 0 80px" }}>
+    <div style={{ maxWidth:880, margin:"0 auto", padding:"48px 0 96px" }}>
+      <DocHeader t={t} mode={mode} meta={meta} />
+      <DocStats  t={t} mode={mode} />
+
       <section style={{ marginBottom:80 }}>
-        <DocSectionHeader num="01" title="カラー"
-          desc="使用するカラーはこの6値のみ。派生カラーやグラデーションは使用しない。"
-          textColor={t.text} subColor={sub} lineColor={t.line} />
+        {sec("01","カラー","使用するカラーはこの6値のみ。派生カラーやグラデーションは使用しない。")}
         <DocColorGrid t={t} mode={mode} />
       </section>
+
       <section style={{ marginBottom:80 }}>
-        <DocSectionHeader num="02" title="タイポグラフィ"
-          desc={"日本語に "+fonts.ja.name+"、欧文に "+fonts.en.name+"。サイズと行間は下表の値のみ使用する。"}
-          textColor={t.text} subColor={sub} lineColor={t.line} />
+        {sec("02","タイポグラフィ","日本語に "+fonts.ja.name+"、欧文に "+fonts.en.name+"。サイズと行間は下表の値のみ使用する。")}
         <DocFontSpecimen t={t} mode={mode} fonts={fonts} />
-        <DocTypeTable t={t} mode={mode} fonts={fonts} />
+        <DocTypeTable   t={t} mode={mode} fonts={fonts} />
+      </section>
+
+      <section style={{ marginBottom:80 }}>
+        {sec("03","スペーシング","すべてのマージン・パディング・ギャップは8ptの倍数のみ使用する。")}
+        <DocSpacing t={t} mode={mode} />
+      </section>
+
+      <section style={{ marginBottom:80 }}>
+        {sec("04","ボタン","4バリアント × 3サイズ。角丸なし・シャドウなし。")}
+        <DocButtons t={t} mode={mode} />
+      </section>
+
+      <section style={{ marginBottom:80 }}>
+        {sec("05","バッジ","3バリアント。すべて短文・大文字ラベル。")}
+        <DocBadges t={t} mode={mode} />
+      </section>
+
+      <section style={{ marginBottom:80 }}>
+        {sec("06","フォーム","フォーカス時のボーダーカラーの & brand.accent を使用。")}
+        <DocForm t={t} mode={mode} />
+      </section>
+
+      <section style={{ marginBottom:0 }}>
+        {sec("07","ナビゲーション","タブとパンくずリスト。アクティブ状態の & brand.accent を使用。")}
+        <DocNav t={t} mode={mode} />
       </section>
     </div>
   );
