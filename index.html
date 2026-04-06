@@ -526,7 +526,98 @@ function InlineEdit({ value, onChange, placeholder, fontSize, fontWeight, color,
   );
 }
 
-function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML }) {
+/* ─────────────────────────────────────────────────────────
+   Presets panel
+───────────────────────────────────────────────────────── */
+function PresetPanel({ presets, onSave, onLoad, onDelete, col, sub, sep, primary, mode }) {
+  const [open, setOpen] = React.useState(false);
+
+  function timeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    const h = Math.floor(m / 60);
+    const d = Math.floor(h / 24);
+    if (d > 0) return d + "d ago";
+    if (h > 0) return h + "h ago";
+    if (m > 0) return m + "m ago";
+    return "just now";
+  }
+
+  const panelBg = mode === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.04)";
+  const itemHoverBg = mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)";
+
+  return (
+    <div style={{ borderBottom:"1px solid "+sep }}>
+      {/* Header row */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 16px" }}>
+        <button onClick={() => setOpen(o => !o)} style={{
+          display:"flex", alignItems:"center", gap:5,
+          background:"none", border:"none", cursor:"pointer", padding:0,
+          color:sub, fontSize:11, fontWeight:600,
+        }}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={sub} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition:"transform 0.18s ease" }}>
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+          SAVED ({presets.length})
+        </button>
+        <button onClick={onSave} style={{
+          display:"flex", alignItems:"center", gap:4,
+          background: primary, color:"white",
+          border:"none", borderRadius:5, cursor:"pointer",
+          padding:"3px 9px", fontSize:11, fontWeight:700,
+        }}>
+          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Save
+        </button>
+      </div>
+
+      {/* Preset list */}
+      {open && (
+        <div style={{ maxHeight:240, overflowY:"auto", borderTop:"1px solid "+sep }}>
+          {presets.length === 0 ? (
+            <p style={{ padding:"14px 16px", fontSize:12, color:sub, textAlign:"center", margin:0 }}>No saved presets</p>
+          ) : presets.map(p => (
+            <div key={p.id}
+              style={{ display:"flex", alignItems:"center", gap:0, borderBottom:"1px solid "+sep }}
+              onMouseEnter={e => e.currentTarget.style.background = itemHoverBg}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              {/* Color dot */}
+              <div style={{ width:4, alignSelf:"stretch", background:p.tokens.light.primary, flexShrink:0 }} />
+              {/* Info — click to load */}
+              <div onClick={() => onLoad(p)} style={{ flex:1, padding:"9px 10px", cursor:"pointer", minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:600, color:col, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                  {p.meta.name || "Untitled"}
+                </div>
+                <div style={{ fontSize:11, color:sub, marginTop:1 }}>
+                  {p.meta.company || "—"} · {timeAgo(p.savedAt)}
+                </div>
+              </div>
+              {/* Delete */}
+              <button onClick={() => onDelete(p.id)} style={{
+                width:28, height:28, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+                background:"none", border:"none", cursor:"pointer", color:sub, marginRight:4,
+                borderRadius:4,
+              }}
+                onMouseEnter={e => { e.currentTarget.style.color="#ef4444"; e.currentTarget.style.background=mode==="light"?"#fee2e2":"rgba(239,68,68,0.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color=sub; e.currentTarget.style.background="none"; }}
+              >
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML, presets, onSavePreset, onLoadPreset, onDeletePreset }) {
   const [tab, setTab] = React.useState("colors");
   const t   = tokens[mode];
   const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
@@ -580,6 +671,10 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
           <span style={{ fontSize:11, color:sub, marginLeft:"auto" }}>Editing</span>
         </div>
       </div>
+
+      {/* Presets */}
+      <PresetPanel presets={presets} onSave={onSavePreset} onLoad={onLoadPreset} onDelete={onDeletePreset}
+        col={col} sub={sub} sep={sep} primary={t.primary} mode={mode} />
 
       {/* Tabs */}
       <div style={{ display:"flex", padding:"8px 10px", gap:4, borderBottom:"1px solid " + sep }}>
@@ -1527,6 +1622,35 @@ function App() {
   const [tokens, setTokens] = React.useState(DEFAULT);
   const [fonts, setFonts]   = React.useState(DEFAULT_FONTS);
   const [meta, setMeta]     = React.useState({ name: "Design System", company: "" });
+  const [presets, setPresets] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem("dsm_presets") || "[]"); }
+    catch { return []; }
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("dsm_presets", JSON.stringify(presets));
+  }, [presets]);
+
+  function savePreset() {
+    const p = {
+      id: Date.now(),
+      savedAt: new Date().toISOString(),
+      meta: { ...meta },
+      tokens: JSON.parse(JSON.stringify(tokens)),
+      fonts:  JSON.parse(JSON.stringify(fonts)),
+    };
+    setPresets(prev => [p, ...prev]);
+  }
+
+  function loadPreset(p) {
+    setTokens(p.tokens);
+    setFonts(p.fonts);
+    setMeta(p.meta);
+  }
+
+  function deletePreset(id) {
+    setPresets(prev => prev.filter(p => p.id !== id));
+  }
 
   const t = tokens[mode];
 
@@ -1777,7 +1901,7 @@ ${JSON.stringify(tokenData, null, 2)}
   return (
     <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
 
-      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} />
+      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} presets={presets} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
 
       {/* Preview Panel */}
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
