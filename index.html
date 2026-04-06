@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design System Manager</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; overflow: hidden; }
+
+    .theme-root, .theme-root * {
+      transition:
+        background-color 0.32s cubic-bezier(0.4,0,0.2,1),
+        color            0.32s cubic-bezier(0.4,0,0.2,1),
+        border-color     0.32s cubic-bezier(0.4,0,0.2,1),
+        box-shadow       0.32s cubic-bezier(0.4,0,0.2,1);
+    }
+    .btn { transition: transform 0.1s ease, filter 0.12s ease, background-color 0.15s ease !important; }
+    .btn:active { transform: scale(0.95) !important; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.4); border-radius: 10px; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 99px;
+      outline: none;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none; padding: 0; cursor: pointer;
+      position: absolute; inset: -30%; width: 160%; height: 160%;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+    .toggle-track {
+      width: 44px; height: 24px; border-radius: 12px; padding: 3px;
+      cursor: pointer; position: relative; display: inline-flex;
+      align-items: center; flex-shrink: 0;
+      transition: background 0.28s ease !important;
+    }
+    .toggle-thumb {
+      width: 18px; height: 18px; border-radius: 50%; background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+      transition: transform 0.26s cubic-bezier(0.4,0,0.2,1) !important;
+    }
+    .toggle-on .toggle-thumb { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+/* ─────────────────────────────────────────────────────────
+   Inline SVG icons (no external dependency)
+───────────────────────────────────────────────────────── */
+function Ico({ d, size = 16, color = "currentColor", fill = "none", strokeWidth = 2, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}
+      stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      style={style}>
+      {Array.isArray(d) ? d.map((p,i) => <path key={i} d={p} />) : <path d={d} />}
+    </svg>
+  );
+}
+
+const ICONS = {
+  sun:      "M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 5a7 7 0 1 0 0 14A7 7 0 0 0 12 5z",
+  moon:     "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
+  download: ["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"],
+  palette:  "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.97-4.48-9-9-9z",
+  type:     ["M4 7V4h16v3","M9 20h6","M12 4v16"],
+  sliders:  ["M4 21v-7","M4 10V3","M12 21v-9","M12 8V3","M20 21v-5","M20 12V3","M1 14h6","M9 8h6","M17 16h6"],
+  eye:      ["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  bell:     ["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"],
+  arrow:    "M5 12h14M12 5l7 7-7 7",
+  star:     "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+  heart:    "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
+  share:    ["M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8","M16 6l-4-4-4 4","M12 2v13"],
+  layers:   ["M12 2 2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"],
+  zap:      "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  check:    "M20 6L9 17l-5-5",
+  user:     ["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2","M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"],
+};
+
+function Icon({ name, size = 16, color = "currentColor", fill = "none", style }) {
+  const d = ICONS[name];
+  if (!d) return null;
+  return <Ico d={d} size={size} color={color} fill={fill} style={style} />;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Constants
+───────────────────────────────────────────────────────── */
+const PT = 1.333;
+
+const TYPO = {
+  h1:      { pt: 64, lh: 140, label: "Heading 1",   w: 700 },
+  h2:      { pt: 48, lh: 140, label: "Heading 2",   w: 700 },
+  h3:      { pt: 32, lh: 140, label: "Heading 3",   w: 600 },
+  bodyL:   { pt: 18, lh: 180, label: "Body Large",  w: 400 },
+  bodyM:   { pt: 16, lh: 160, label: "Body Medium", w: 400 },
+  bodyS:   { pt: 14, lh: 160, label: "Body Small",  w: 400 },
+  caption: { pt: 12, lh: 140, label: "Caption",     w: 400 },
+};
+
+const DEFAULT = {
+  light: {
+    primary:    "#f59e0b",
+    secondary:  "#06b6d4",
+    accent:     "#ef4444",
+    background: "#ffffff",
+    text:       "#0f172a",
+    line:       "#e2e8f0",
+    rSm: 4, rMd: 8, rLg: 16,
+  },
+  dark: {
+    primary:    "#fbbf24",
+    secondary:  "#22d3ee",
+    accent:     "#f87171",
+    background: "#0f172a",
+    text:       "#e2e8f0",
+    line:       "#1e293b",
+    rSm: 4, rMd: 8, rLg: 16,
+  },
+};
+
+/* background から surface 色を自動生成 */
+function getSurf(mode) {
+  return mode === "light" ? "rgba(0,0,0,0.028)" : "rgba(255,255,255,0.05)";
+}
+
+const DEFAULT_FONTS = {
+  ja: { name: "Noto Sans JP", weights: [400, 700] },
+  en: { name: "Vend Sans",    weights: [400, 700] },
+};
+
+const ALL_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+
+const GFONTS_JP = [
+  "Noto Sans JP", "Noto Serif JP", "M PLUS Rounded 1c", "M PLUS 1p",
+  "Zen Kaku Gothic New", "BIZ UDGothic", "BIZ UDPGothic",
+  "Shippori Mincho", "Kosugi Maru", "Sawarabi Gothic", "Kaisei Decol",
+];
+const GFONTS_EN = [
+  "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins",
+  "Raleway", "Nunito", "DM Sans", "Outfit", "Plus Jakarta Sans",
+  "Space Grotesk", "Work Sans", "Playfair Display", "Merriweather",
+  "Source Sans 3", "Geist", "Figtree",
+];
+
+/* Google Fonts の動的ロード */
+const loadedFonts = {};   // name → "loading" | "ok" | "error"
+
+function loadGoogleFont(name, weights) {
+  const key = name + ":" + weights.join(",");
+  if (loadedFonts[key] === "ok") return Promise.resolve("ok");
+
+  const id = "gf-" + name.replace(/\s+/g, "-").toLowerCase();
+  const old = document.getElementById(id);
+  if (old) old.remove();
+
+  const link = document.createElement("link");
+  link.id   = id;
+  link.rel  = "stylesheet";
+  const family = name.replace(/\s+/g, "+");
+  const wStr   = weights.sort((a,b) => a-b).join(";");
+  link.href = "https://fonts.googleapis.com/css2?family=" + family + ":wght@" + wStr + "&display=swap";
+  document.head.appendChild(link);
+
+  loadedFonts[key] = "loading";
+  return new Promise((res, rej) => {
+    link.onload  = () => { loadedFonts[key] = "ok";    res("ok");    };
+    link.onerror = () => { loadedFonts[key] = "error"; rej("error"); };
+  });
+}
+
+function ptPx(pt) { return Math.round(pt * PT * 10) / 10; }
+
+function alpha(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+}
+
+/* ─────────────────────────────────────────────────────────
+   Theme Toggle
+───────────────────────────────────────────────────────── */
+function ThemeToggle({ mode, onToggle }) {
+  const on = mode === "dark";
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+      <Icon name="sun"  size={14} color={on ? "#64748b" : "#f59e0b"} />
+      <div
+        className={"toggle-track " + (on ? "toggle-on" : "")}
+        style={{ background: on ? "#4f46e5" : "#94a3b8" }}
+        onClick={onToggle}
+      >
+        <div className="toggle-thumb" />
+      </div>
+      <Icon name="moon" size={14} color={on ? "#818cf8" : "#94a3b8"} />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Sidebar sub-components
+───────────────────────────────────────────────────────── */
+function Divider({ sep }) {
+  return <div style={{ height:1, background:sep, margin:"10px 0" }} />;
+}
+
+function SecLabel({ icon, text, sub }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+      <Icon name={icon} size={13} color={sub} />
+      <span style={{ fontSize:10, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:sub }}>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+function normalizeHex(raw) {
+  const s = raw.trim();
+  const h = s.startsWith("#") ? s : "#" + s;
+  if (/^#[0-9a-f]{3}$/i.test(h)) {
+    // expand 3-digit to 6-digit
+    return "#" + h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
+  }
+  return HEX_RE.test(h) ? h.toLowerCase() : null;
+}
+
+function ColorRow({ label, value, onChange, text, sub, sep, primary }) {
+  const [draft,   setDraft]   = React.useState(value.toUpperCase());
+  const [focused, setFocused] = React.useState(false);
+  const [invalid, setInvalid] = React.useState(false);
+
+  React.useEffect(() => { if (!focused) setDraft(value.toUpperCase()); }, [value, focused]);
+
+  function handleChange(raw) {
+    setDraft(raw);
+    const norm = normalizeHex(raw);
+    if (norm) { setInvalid(false); onChange(norm); }
+    else      { setInvalid(true); }
+  }
+  function handleBlur() {
+    setFocused(false);
+    const norm = normalizeHex(draft);
+    if (norm) { setInvalid(false); onChange(norm); setDraft(norm.toUpperCase()); }
+    else      { setInvalid(false); setDraft(value.toUpperCase()); }
+  }
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 0" }}>
+      <span style={{ fontSize:14, fontWeight:600, color:text }}>{label}</span>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <input type="text" value={draft} maxLength={7}
+          onFocus={() => setFocused(true)} onBlur={handleBlur}
+          onChange={e => handleChange(e.target.value)} spellCheck={false}
+          style={{
+            width:80, fontSize:12, fontFamily:"monospace",
+            color: invalid ? "#ef4444" : sub,
+            background:"transparent", border:"none",
+            borderBottom:"1.5px solid " + (focused ? (invalid ? "#ef4444" : primary) : "transparent"),
+            outline:"none", padding:"1px 0", textAlign:"right",
+            transition:"border-color 0.15s ease, color 0.15s ease",
+          }}
+        />
+        <div style={{
+          width:44, height:44, borderRadius:11, overflow:"hidden",
+          border:"1.5px solid " + sep,
+          background:value, position:"relative", flexShrink:0, cursor:"pointer",
+        }}>
+          <input type="color" value={value} onChange={e => onChange(e.target.value)} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RangeRow({ label, value, min, max, unit, onChange, text, sub, primary, bg }) {
+  const pct = ((value - min) / (max - min)) * 100;
+  const track = "linear-gradient(to right," + primary + " 0%," + primary + " " + pct + "%," + bg + " " + pct + "%," + bg + " 100%)";
+  return (
+    <div style={{ padding:"5px 0" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+        <span style={{ fontSize:13, color:text }}>{label}</span>
+        <span style={{ fontSize:11, fontFamily:"monospace", color:sub }}>{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{ background:track }} />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Sidebar
+───────────────────────────────────────────────────────── */
+function FontSelector({ tag, font, candidates, onChange, col, sub, sep, primary, mode }) {
+  const [inputVal, setInputVal]   = React.useState(font.name);
+  const [focused,  setFocused]    = React.useState(false);
+  const [status,   setStatus]     = React.useState(null); // null | "loading" | "ok" | "error"
+  const [filtered, setFiltered]   = React.useState([]);
+  const [showDrop, setShowDrop]   = React.useState(false);
+  const inputRef = React.useRef(null);
+
+  // sync if parent name changes externally
+  React.useEffect(() => { setInputVal(font.name); }, [font.name]);
+
+  // load font on mount
+  React.useEffect(() => {
+    if (!GFONTS_JP.concat(GFONTS_EN).includes(font.name)) return;
+    setStatus("loading");
+    loadGoogleFont(font.name, font.weights)
+      .then(() => setStatus("ok"))
+      .catch(() => setStatus("error"));
+  }, []); // eslint-disable-line
+
+  function handleInput(v) {
+    setInputVal(v);
+    setFiltered(
+      candidates.filter(f => f.toLowerCase().includes(v.toLowerCase()) && f !== v).slice(0, 7)
+    );
+    setShowDrop(true);
+  }
+
+  function selectFont(name) {
+    setInputVal(name);
+    setShowDrop(false);
+    setFiltered([]);
+    const next = { ...font, name };
+    onChange(next);
+    setStatus("loading");
+    loadGoogleFont(name, font.weights)
+      .then(() => setStatus("ok"))
+      .catch(() => setStatus("error"));
+  }
+
+  function handleBlur() {
+    setFocused(false);
+    setTimeout(() => setShowDrop(false), 150);
+    // if typed name differs and is in candidates, load it
+    if (inputVal !== font.name && candidates.includes(inputVal)) {
+      selectFont(inputVal);
+    }
+  }
+
+  function toggleWeight(w) {
+    const ws = font.weights.includes(w)
+      ? font.weights.filter(x => x !== w)
+      : [...font.weights, w].sort((a,b) => a-b);
+    if (ws.length === 0) return; // keep at least one
+    const next = { ...font, weights: ws };
+    onChange(next);
+    setStatus("loading");
+    loadGoogleFont(font.name, ws)
+      .then(() => setStatus("ok"))
+      .catch(() => setStatus("error"));
+  }
+
+  const isJP = tag === "JP";
+  const tagColor  = isJP ? (mode === "light" ? "#16a34a" : "#4ade80") : (mode === "light" ? "#2563eb" : "#60a5fa");
+  const tagBg     = isJP ? (mode === "light" ? "#f0fdf4" : "rgba(74,222,128,0.12)") : (mode === "light" ? "#eff6ff" : "rgba(96,165,250,0.12)");
+  const statusIcon = status === "ok" ? "✓" : status === "error" ? "✗" : status === "loading" ? "…" : "";
+  const statusColor = status === "ok" ? "#22c55e" : status === "error" ? "#ef4444" : sub;
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      {/* Header row */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7 }}>
+        <span style={{ fontSize:9, fontWeight:700, letterSpacing:"0.07em", padding:"2px 6px", borderRadius:4, background:tagBg, color:tagColor, flexShrink:0 }}>
+          {tag}
+        </span>
+        <span style={{ fontSize:11, color:sub }}>{isJP ? "和文" : "欧文"}</span>
+        {statusIcon && (
+          <span style={{ fontSize:11, color:statusColor, marginLeft:"auto", fontWeight:600 }}>{statusIcon}</span>
+        )}
+      </div>
+
+      {/* Font name input + dropdown */}
+      <div style={{ position:"relative", marginBottom:8 }}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputVal}
+          onChange={e => handleInput(e.target.value)}
+          onFocus={() => { setFocused(true); setShowDrop(true); setFiltered(candidates.slice(0,7)); }}
+          onBlur={handleBlur}
+          placeholder="Font name..."
+          style={{
+            width:"100%", fontSize:13,
+            fontFamily: font.name + ", sans-serif",
+            background: mode === "light" ? "white" : "rgba(255,255,255,0.06)",
+            color:col,
+            border:"1.5px solid " + (focused ? primary : sep),
+            borderRadius:7, padding:"7px 10px", outline:"none",
+            transition:"border-color 0.15s ease",
+          }}
+        />
+        {showDrop && filtered.length > 0 && (
+          <div style={{
+            position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:50,
+            background: mode === "light" ? "white" : "#1e293b",
+            border:"1px solid " + sep, borderRadius:8,
+            boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
+            overflow:"hidden",
+          }}>
+            {filtered.map(f => (
+              <div key={f}
+                onMouseDown={() => selectFont(f)}
+                style={{
+                  padding:"7px 11px", fontSize:13, cursor:"pointer",
+                  fontFamily: f + ", sans-serif",
+                  color:col,
+                  background:"transparent",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = mode === "light" ? "#f1f5f9" : "rgba(255,255,255,0.07)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >{f}</div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Weight toggles */}
+      <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+        {ALL_WEIGHTS.map(w => {
+          const active = font.weights.includes(w);
+          return (
+            <button key={w} onClick={() => toggleWeight(w)} style={{
+              padding:"3px 8px", borderRadius:5, border:"1.5px solid " + (active ? primary : sep),
+              background: active ? primary : "transparent",
+              color: active ? "white" : sub,
+              fontSize:11, fontWeight:600, cursor:"pointer",
+              transition:"all 0.12s ease",
+              fontFamily: font.name + ", sans-serif",
+              fontWeight: w,
+            }}>{w}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function InlineEdit({ value, onChange, placeholder, fontSize, fontWeight, color, sub, primary, maxWidth }) {
+  const [editing, setEditing] = React.useState(false);
+  const [draft,   setDraft]   = React.useState(value);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => { setDraft(value); }, [value]);
+  React.useEffect(() => { if (editing && inputRef.current) inputRef.current.select(); }, [editing]);
+
+  function commit() {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed !== value) onChange(trimmed || value);
+    else setDraft(value);
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
+        style={{
+          fontSize, fontWeight, color,
+          background: "transparent",
+          border: "none",
+          borderBottom: "1.5px solid " + primary,
+          outline: "none",
+          padding: "0 0 1px 0",
+          width: maxWidth || "140px",
+          minWidth: 60,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      title="クリックして編集"
+      style={{
+        fontSize, fontWeight, color, cursor: "text",
+        borderBottom: "1.5px dashed transparent",
+        padding: "0 0 1px 0",
+        display: "inline-block",
+        maxWidth: maxWidth || "140px",
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        transition: "border-color 0.15s",
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderBottomColor = sub}
+      onMouseLeave={e => e.currentTarget.style.borderBottomColor = "transparent"}
+    >
+      {value || <span style={{ opacity: 0.35 }}>{placeholder}</span>}
+    </span>
+  );
+}
+
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport }) {
+  const [tab, setTab] = React.useState("colors");
+  const t   = tokens[mode];
+  const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
+  const col = mode === "light" ? "#0f172a" : "#e2e8f0";
+  const sub = mode === "light" ? "#64748b" : "#94a3b8";
+  const sep = mode === "light" ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)";
+  const rangeBg = mode === "light" ? "#e2e8f0" : "#1e293b";
+
+  const tabStyle = (active) => ({
+    flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:5,
+    padding:"6px 4px", borderRadius:7, border:"none", cursor:"pointer",
+    background: active ? (mode === "light" ? "rgba(99,102,241,0.1)" : "rgba(129,140,248,0.15)") : "transparent",
+    color: active ? t.primary : sub,
+    fontSize:11, fontWeight: active ? 600 : 400,
+  });
+
+  return (
+    <div style={{
+      width:272, flexShrink:0, background:bg, color:col,
+      display:"flex", flexDirection:"column", height:"100vh",
+      borderRight:"1px solid " + sep,
+    }}>
+      {/* Header */}
+      <div style={{ padding:"14px 16px", borderBottom:"1px solid " + sep }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:t.primary, flexShrink:0,
+              display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Icon name="palette" size={14} color="white" />
+            </div>
+            <div style={{ minWidth:0 }}>
+              <InlineEdit value={meta.name} onChange={v => onMetaUpdate("name",v)}
+                placeholder="System name" fontSize={14} fontWeight={700} color={col}
+                sub={sub} primary={t.primary} maxWidth="150px" />
+              <div>
+                <InlineEdit value={meta.company} onChange={v => onMetaUpdate("company",v)}
+                  placeholder="+ 会社名を追加" fontSize={11} fontWeight={400} color={sub}
+                  sub={sub} primary={t.primary} maxWidth="150px" />
+              </div>
+            </div>
+          </div>
+          <ThemeToggle mode={mode} onToggle={onToggle} />
+        </div>
+        <div style={{
+          display:"flex", alignItems:"center", gap:8,
+          background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)",
+          padding:"6px 10px", borderRadius:8,
+        }}>
+          <div style={{ width:7, height:7, borderRadius:"50%", background:t.primary }} />
+          <span style={{ fontSize:12, fontWeight:600 }}>{mode === "light" ? "Light Mode" : "Dark Mode"}</span>
+          <span style={{ fontSize:11, color:sub, marginLeft:"auto" }}>編集中</span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display:"flex", padding:"8px 10px", gap:4, borderBottom:"1px solid " + sep }}>
+        {[["colors","palette","Colors"],["type","type","Type"],["effects","sliders","Effects"]].map(([key,icon,lbl]) => (
+          <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}>
+            <Icon name={icon} size={12} color={tab === key ? t.primary : sub} />
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex:1, overflowY:"auto", padding:"14px 16px" }}>
+
+        {tab === "colors" && (
+          <div>
+            <SecLabel icon="palette" text={(mode === "light" ? "Light" : "Dark") + " Palette"} sub={sub} />
+
+            <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2, marginTop:2 }}>Brand</p>
+            <ColorRow label="Primary"   value={t.primary}   onChange={v => onUpdate("primary",v)}   text={col} sub={sub} sep={sep} primary={t.primary} />
+            <ColorRow label="Secondary" value={t.secondary} onChange={v => onUpdate("secondary",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
+            <ColorRow label="Accent"    value={t.accent}    onChange={v => onUpdate("accent",v)}    text={col} sub={sub} sep={sep} primary={t.primary} />
+
+            <Divider sep={sep} />
+
+            <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2 }}>Base</p>
+            <ColorRow label="Background" value={t.background} onChange={v => onUpdate("background",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
+            <ColorRow label="Text"       value={t.text}       onChange={v => onUpdate("text",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
+            <ColorRow label="Line"       value={t.line}       onChange={v => onUpdate("line",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
+
+            <Divider sep={sep} />
+
+            <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:8 }}>Swatch</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+              {[["Primary",t.primary],["Secondary",t.secondary],["Accent",t.accent],["BG",t.background],["Text",t.text],["Line",t.line]].map(([lbl,clr]) => (
+                <div key={lbl} style={{ textAlign:"center" }}>
+                  <div style={{ height:44, borderRadius:10, background:clr, marginBottom:5, border:"1px solid " + sep }} />
+                  <span style={{ fontSize:9, color:sub }}>{lbl}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "type" && (
+          <div>
+            <SecLabel icon="type" text="Font Families" sub={sub} />
+            <FontSelector tag="JP" font={fonts.ja} candidates={GFONTS_JP} onChange={v => onFontUpdate("ja",v)} col={col} sub={sub} sep={sep} primary={t.primary} mode={mode} />
+            <FontSelector tag="EN" font={fonts.en} candidates={GFONTS_EN} onChange={v => onFontUpdate("en",v)} col={col} sub={sub} sep={sep} primary={t.primary} mode={mode} />
+            <Divider sep={sep} />
+            <SecLabel icon="type" text="Type Scale" sub={sub} />
+            {Object.entries(TYPO).map(([key,v]) => (
+              <div key={key} style={{ padding:"7px 10px", borderRadius:8, marginBottom:5, background: mode === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.04)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:col }}>{v.label}</span>
+                  <span style={{ fontSize:11, fontFamily:"monospace", color:sub }}>{v.pt}pt</span>
+                </div>
+                <div style={{ display:"flex", gap:10, marginTop:2 }}>
+                  <span style={{ fontSize:10, color:sub }}>{ptPx(v.pt)}px</span>
+                  <span style={{ fontSize:10, color:sub }}>LH {v.lh}%</span>
+                  <span style={{ fontSize:10, color:sub }}>W{v.w}</span>
+                </div>
+              </div>
+            ))}
+            <p style={{ fontSize:10, color:sub, textAlign:"center", marginTop:8 }}>1pt = {PT}px</p>
+          </div>
+        )}
+
+        {tab === "effects" && (
+          <div>
+            <SecLabel icon="sliders" text="Border Radius" sub={sub} />
+            <RangeRow label="Small"  value={t.rSm} min={0} max={20} unit="px" onChange={v => onUpdate("rSm",v)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+            <RangeRow label="Medium" value={t.rMd} min={0} max={32} unit="px" onChange={v => onUpdate("rMd",v)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+            <RangeRow label="Large"  value={t.rLg} min={0} max={48} unit="px" onChange={v => onUpdate("rLg",v)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+            <div style={{ display:"flex", gap:8, marginTop:14, alignItems:"flex-end" }}>
+              {[["sm",t.rSm],["md",t.rMd],["lg",t.rLg]].map(([lbl,r]) => (
+                <div key={lbl} style={{ flex:1, textAlign:"center" }}>
+                  <div style={{ height:40, background:t.primary, borderRadius:r, opacity:0.75 }} />
+                  <span style={{ fontSize:9, color:sub, marginTop:4, display:"block" }}>{lbl}·{r}px</span>
+                </div>
+              ))}
+            </div>
+            <Divider sep={sep} />
+            <SecLabel icon="zap" text="Shadow Strategy" sub={sub} />
+            <div style={{ padding:"10px 12px", borderRadius:10, background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                <div style={{ width:8, height:8, borderRadius:"50%", background: mode === "light" ? "#22c55e" : "#f59e0b" }} />
+                <span style={{ fontSize:12, fontWeight:600, color:col }}>{mode === "light" ? "Depth Shadows" : "Border Emphasis"}</span>
+              </div>
+              <p style={{ fontSize:11, color:sub, lineHeight:1.55 }}>
+                {mode === "light" ? "Ambient + elevation shadows for depth layering." : "Subtle borders replace heavy shadows on dark backgrounds."}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Export */}
+      <div style={{ padding:"12px 16px", borderTop:"1px solid " + sep }}>
+        <button className="btn" onClick={onExport} style={{
+          width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          padding:"10px 0", borderRadius:t.rMd, border:"none", cursor:"pointer",
+          background:t.primary, color:"white", fontSize:13, fontWeight:700,
+          boxShadow: mode === "light" ? "0 4px 14px " + alpha(t.primary, 0.38) : "none",
+        }}>
+          <Icon name="download" size={15} color="white" />
+          Export JSON
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Preview: NavBar
+───────────────────────────────────────────────────────── */
+function PvNavBar({ t, mode, meta }) {
+  const [hov, setHov] = React.useState(null);
+  const shadow = mode === "light" ? "0 1px 4px rgba(0,0,0,0.08)" : "none";
+  const surf = getSurf(mode);
+  return (
+    <div style={{
+      display:"flex", alignItems:"center", justifyContent:"space-between",
+      padding:"10px 16px", marginBottom:20,
+      background: t.background,
+      borderRadius:t.rMd,
+      border: "1px solid " + t.line,
+      boxShadow:shadow,
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ width:30, height:30, borderRadius:t.rSm, background:t.primary,
+          display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <span style={{ color:"white", fontSize:11, fontWeight:800 }}>
+            {(meta.name || "DS").split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()}
+          </span>
+        </div>
+        <div>
+          <div style={{ color:t.text, fontWeight:700, fontSize:14, lineHeight:1.2 }}>
+            {meta.name || "Design System"}
+          </div>
+          {meta.company && (
+            <div style={{ color:t.text, fontSize:11, opacity:0.45, lineHeight:1.2 }}>
+              {meta.company}
+            </div>
+          )}
+        </div>
+      </div>
+      <nav style={{ display:"flex", gap:2 }}>
+        {["Components","Tokens","Docs"].map(item => (
+          <button key={item}
+            onMouseEnter={() => setHov(item)} onMouseLeave={() => setHov(null)}
+            style={{
+              background: hov === item ? t.line : "transparent",
+              color:t.text, border:"none", cursor:"pointer",
+              padding:"4px 10px", borderRadius:t.rSm,
+              fontSize:13, opacity: hov === item ? 1 : 0.6,
+              transition:"all 0.15s ease",
+            }}
+          >{item}</button>
+        ))}
+      </nav>
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <div style={{ width:30, height:30, borderRadius:t.rSm, border:"none", cursor:"pointer",
+          background:"transparent", display:"flex", alignItems:"center", justifyContent:"center",
+          color:t.text, opacity:0.5 }}>
+          <Icon name="bell" size={16} color={t.text} />
+        </div>
+        <div style={{ width:28, height:28, borderRadius:"50%", background:t.primary,
+          display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <Icon name="user" size={14} color="white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Preview: Typography
+───────────────────────────────────────────────────────── */
+function FontBadge({ label, name, sub, color, bg }) {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        <span style={{
+          fontSize:9, fontWeight:700, letterSpacing:"0.07em",
+          padding:"2px 6px", borderRadius:4, background:bg, color:color, flexShrink:0,
+        }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:600, fontFamily: name + ", sans-serif", color:color, opacity:0.85 }}>
+          {name}
+        </span>
+      </div>
+      {sub && <span style={{ fontSize:10, color:color, opacity:0.55, paddingLeft:2 }}>{sub}</span>}
+    </div>
+  );
+}
+
+const SPECIMEN_EN = {
+  h1:      "Design Systems",
+  h2:      "Typography Scale",
+  h3:      "Font Specimen",
+  bodyL:   "The quick brown fox jumps over the lazy dog.",
+  bodyM:   "Typography is the art and technique of arranging type.",
+  bodyS:   "Good design is as little design as possible.",
+  caption: "Caption — 12pt · 140% line-height",
+};
+const SPECIMEN_JP = {
+  h1:      "デザインシステム",
+  h2:      "タイポグラフィ",
+  h3:      "フォントスペシメン",
+  bodyL:   "素早い茶色の狐は怠惰な犬を飛び越えます。",
+  bodyM:   "タイポグラフィは文字を美しく整える技術です。",
+  bodyS:   "良いデザインはできる限りシンプルです。",
+  caption: "キャプション — 12pt · 140%行送り",
+};
+
+function TypoSpecimen({ t, mode, font, lang, specimens, accentColor, accentBg, label }) {
+  const sep     = t.line;
+  const subText = mode === "light" ? "#94a3b8" : "#64748b";
+  const border  = "1px solid " + t.line;
+  const shadow  = mode === "light" ? "0 1px 4px rgba(0,0,0,0.06)" : "none";
+  const ff      = font.name + ", sans-serif";
+
+  function closestWeight(target) {
+    return font.weights.reduce((a, b) => Math.abs(b - target) < Math.abs(a - target) ? b : a);
+  }
+
+  const entries = Object.entries(TYPO);
+
+  return (
+    <div style={{
+      background: t.background, borderRadius: t.rLg,
+      border, boxShadow: shadow,
+      overflow: "hidden", flex: 1, minWidth: 0,
+    }}>
+      {/* Card header */}
+      <div style={{
+        padding: "12px 16px",
+        background: accentBg,
+        borderBottom: "1px solid " + sep,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+            padding: "2px 7px", borderRadius: 4,
+            background: accentColor, color: "white",
+          }}>{label}</span>
+          <span style={{
+            fontSize: 13, fontWeight: 700,
+            fontFamily: ff,
+            color: accentColor,
+          }}>{font.name}</span>
+        </div>
+        <span style={{ fontSize: 10, fontFamily: "monospace", color: accentColor, opacity: 0.7 }}>
+          W {font.weights.join(" · ")}
+        </span>
+      </div>
+
+      {/* Scale rows */}
+      <div style={{ padding: "4px 0" }}>
+        {entries.map(([key, v], i) => {
+          const px  = ptPx(v.pt);
+          const cap = Math.min(px, 44);
+          const fw  = closestWeight(v.w);
+          return (
+            <div key={key} style={{
+              display: "flex", alignItems: "baseline", gap: 10,
+              padding: "10px 16px",
+              borderBottom: i < entries.length - 1 ? "1px solid " + sep : "none",
+            }}>
+              {/* Role label */}
+              <div style={{ width: 66, flexShrink: 0 }}>
+                <div style={{ fontSize: 10, color: t.text, opacity: 0.35 }}>{v.label}</div>
+                <div style={{ fontSize: 9, fontFamily: "monospace", color: subText }}>
+                  {v.pt}pt·W{fw}
+                </div>
+              </div>
+
+              {/* Specimen text */}
+              <span style={{
+                fontSize: cap,
+                lineHeight: v.lh / 100,
+                fontWeight: fw,
+                fontFamily: ff,
+                color: t.text,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+              }}>
+                {specimens[key]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PvTypo({ t, mode, fonts }) {
+  const enColor   = mode === "light" ? "#2563eb" : "#60a5fa";
+  const enBg      = mode === "light" ? "rgba(239,246,255,0.8)" : "rgba(96,165,250,0.08)";
+  const jpColor   = mode === "light" ? "#16a34a" : "#4ade80";
+  const jpBg      = mode === "light" ? "rgba(240,253,244,0.8)" : "rgba(74,222,128,0.08)";
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{
+        fontSize: 10, fontWeight: 600, letterSpacing: "0.1em",
+        textTransform: "uppercase", color: t.text, opacity: 0.35, marginBottom: 12,
+      }}>
+        Typography Scale
+      </p>
+      <div style={{ display: "flex", gap: 16 }}>
+        <TypoSpecimen
+          t={t} mode={mode}
+          font={fonts.en} lang="en"
+          specimens={SPECIMEN_EN}
+          label="EN 欧文"
+          accentColor={enColor} accentBg={enBg}
+        />
+        <TypoSpecimen
+          t={t} mode={mode}
+          font={fonts.ja} lang="ja"
+          specimens={SPECIMEN_JP}
+          label="JP 和文"
+          accentColor={jpColor} accentBg={jpBg}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Preview: Buttons
+───────────────────────────────────────────────────────── */
+function PvButtons({ t, mode }) {
+  const border = "1px solid " + t.line;
+  const shadow = mode === "light" ? "0 1px 4px rgba(0,0,0,0.06)" : "none";
+
+  function Btn({ label, bg, color, bdr, hBg, hFilter, opacity }) {
+    const [hov, setHov] = React.useState(false);
+    const [act, setAct] = React.useState(false);
+    return (
+      <button
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => { setHov(false); setAct(false); }}
+        onMouseDown={() => setAct(true)}
+        onMouseUp={() => setAct(false)}
+        style={{
+          background: hov && hBg ? hBg : bg,
+          color, border: bdr || "none", cursor:"pointer",
+          padding:"8px 18px", borderRadius:t.rMd,
+          fontSize:13, fontWeight:600,
+          opacity: opacity || 1,
+          boxShadow: shadow && !act ? "0 4px 14px " + alpha(bg, 0.32) : "none",
+          transform: act ? "scale(0.95)" : hov ? "scale(1.02)" : "scale(1)",
+          filter: hov && hFilter ? "brightness(1.12)" : "none",
+          transition:"all 0.12s ease",
+        }}
+      >{label}</button>
+    );
+  }
+
+  function IcoBtn({ icon, bg, r }) {
+    const [hov, setHov] = React.useState(false);
+    const [act, setAct] = React.useState(false);
+    return (
+      <button
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => { setHov(false); setAct(false); }}
+        onMouseDown={() => setAct(true)}
+        onMouseUp={() => setAct(false)}
+        style={{
+          width:38, height:38, borderRadius:r, background:bg,
+          border:"none", cursor:"pointer",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          transform: act ? "scale(0.95)" : hov ? "scale(1.08)" : "scale(1)",
+          filter: hov ? "brightness(1.12)" : "none",
+          transition:"all 0.12s ease",
+        }}
+      >
+        <Icon name={icon} size={17} color="white" />
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ background:t.background, borderRadius:t.rLg, border, boxShadow:shadow, padding:"16px 20px", marginBottom:20 }}>
+      <p style={{ fontSize:10, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:t.text, opacity:0.35, marginBottom:14 }}>
+        Buttons &amp; Interaction
+      </p>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:10, alignItems:"center" }}>
+        <Btn label="Primary"    bg={t.primary}    color="white"          hFilter={true} />
+        <Btn label="Secondary"  bg={t.secondary}  color="white"          hFilter={true} />
+        <Btn label="Accent"     bg={t.accent}     color="white"          hFilter={true} />
+        <Btn label="Ghost"      bg="transparent"  color={t.text} bdr={"1.5px solid "+t.line} hBg={t.line} opacity={0.8} />
+        <IcoBtn icon="arrow" bg={t.primary}    r={t.rLg} />
+        <IcoBtn icon="star"  bg={t.accent}     r={t.rMd} />
+      </div>
+      <p style={{ fontSize:11, color:t.text, opacity:0.32, marginTop:10 }}>
+        Hover → brightness · Click → scale(0.95)
+      </p>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Preview: Cards + Form
+───────────────────────────────────────────────────────── */
+function PvCards({ t, mode }) {
+  const wrapBorder = "1px solid " + t.line;
+  const wrapShadow = mode === "light" ? "0 1px 4px rgba(0,0,0,0.06)" : "none";
+  const cardBorder = "1px solid " + t.line;
+  const cardShadow = mode === "light" ? "0 8px 24px rgba(0,0,0,0.08)" : "0 8px 24px rgba(0,0,0,0.4)";
+  const inputBorder = t.line;
+  const [liked, setLiked] = React.useState(false);
+  const [focus, setFocus] = React.useState(null);
+
+  return (
+    <div style={{ background:t.background, borderRadius:t.rLg, border:wrapBorder, boxShadow:wrapShadow, padding:"16px 20px", marginBottom:20 }}>
+      <p style={{ fontSize:10, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:t.text, opacity:0.35, marginBottom:14 }}>
+        Cards &amp; Form
+      </p>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+
+        {/* Content card */}
+        <div style={{ background:t.background, borderRadius:t.rLg, border:cardBorder, boxShadow:cardShadow, padding:16 }}>
+          <div style={{
+            height:72, borderRadius:t.rMd, marginBottom:12,
+            background:alpha(t.primary,0.12),
+            display:"flex", alignItems:"center", justifyContent:"center",
+          }}>
+            <Icon name="layers" size={26} color={t.primary} />
+          </div>
+          <p style={{ fontSize:14, fontWeight:700, color:t.text, marginBottom:5 }}>Component Card</p>
+          <p style={{ fontSize:12, color:t.text, opacity:0.5, lineHeight:1.6, marginBottom:12 }}>
+            Live preview with current token values applied.
+          </p>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <button className="btn" style={{
+              background:t.primary, color:"white", border:"none", cursor:"pointer",
+              padding:"5px 12px", borderRadius:t.rSm, fontSize:12, fontWeight:600,
+            }}>View</button>
+            <div style={{ display:"flex", gap:4 }}>
+              <button onClick={() => setLiked(p => !p)} style={{
+                width:28, height:28, borderRadius:t.rSm, border:"none", cursor:"pointer",
+                background:"transparent", display:"flex", alignItems:"center", justifyContent:"center",
+              }}>
+                <Icon name="heart" size={14} color={liked ? "#ef4444" : t.text}
+                  fill={liked ? "#ef4444" : "none"} style={{ opacity: liked ? 1 : 0.4 }} />
+              </button>
+              <button style={{
+                width:28, height:28, borderRadius:t.rSm, border:"none", cursor:"pointer",
+                background:"transparent", display:"flex", alignItems:"center", justifyContent:"center",
+              }}>
+                <Icon name="share" size={14} color={t.text} style={{ opacity:0.4 }} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Form card */}
+        <div style={{ background:t.background, borderRadius:t.rLg, border:cardBorder, boxShadow:cardShadow, padding:16 }}>
+          <p style={{ fontSize:14, fontWeight:700, color:t.text, marginBottom:14 }}>Sign In</p>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {[["email","Email address"],["password","Password"]].map(([type,ph]) => (
+              <input key={ph} type={type} placeholder={ph}
+                onFocus={() => setFocus(ph)} onBlur={() => setFocus(null)}
+                style={{
+                  background: mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)", color:t.text,
+                  border:"1.5px solid " + (focus === ph ? t.primary : inputBorder),
+                  borderRadius:t.rMd, padding:"8px 12px", fontSize:13,
+                  outline:"none", width:"100%",
+                  transition:"border-color 0.15s ease",
+                }}
+              />
+            ))}
+            <button className="btn" style={{
+              background:t.primary, color:"white", border:"none", cursor:"pointer",
+              padding:"9px 0", borderRadius:t.rMd, fontSize:13, fontWeight:700, width:"100%",
+              boxShadow: mode === "light" ? "0 4px 14px " + alpha(t.primary, 0.3) : "none",
+            }}>Continue →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   App Root
+───────────────────────────────────────────────────────── */
+function App() {
+  const [mode, setMode]     = React.useState("light");
+  const [tokens, setTokens] = React.useState(DEFAULT);
+  const [fonts, setFonts]   = React.useState(DEFAULT_FONTS);
+  const [meta, setMeta]     = React.useState({ name: "Design System", company: "" });
+
+  const t = tokens[mode];
+
+  function toggleMode() { setMode(m => m === "light" ? "dark" : "light"); }
+
+  function updateToken(key, value) {
+    setTokens(prev => ({ ...prev, [mode]: { ...prev[mode], [key]: value } }));
+  }
+
+  function updateFont(key, value) {
+    setFonts(prev => ({ ...prev, [key]: value }));
+  }
+
+  function exportJSON() {
+    const out = {
+      version: "1.0.0",
+      exportedAt: new Date().toISOString(),
+      meta: { name: meta.name, company: meta.company },
+      fonts: {
+        ja: { name: fonts.ja.name, weights: fonts.ja.weights },
+        en: { name: fonts.en.name, weights: fonts.en.weights },
+      },
+      typography: Object.fromEntries(
+        Object.entries(TYPO).map(([k,v]) => [k, {
+          label:v.label, pt:v.pt, px:ptPx(v.pt), lineHeight:v.lh+"%", fontWeight:v.w,
+          fontFamily: k.startsWith("h") ? fonts.en : fonts.ja,
+        }])
+      ),
+      colors: {
+        light: { primary:tokens.light.primary, secondary:tokens.light.secondary, accent:tokens.light.accent, background:tokens.light.background, text:tokens.light.text, line:tokens.light.line },
+        dark:  { primary:tokens.dark.primary,  secondary:tokens.dark.secondary,  accent:tokens.dark.accent,  background:tokens.dark.background,  text:tokens.dark.text,  line:tokens.dark.line  },
+      },
+      borderRadius: {
+        light: { sm:tokens.light.rSm, md:tokens.light.rMd, lg:tokens.light.rLg },
+        dark:  { sm:tokens.dark.rSm,  md:tokens.dark.rMd,  lg:tokens.dark.rLg  },
+      },
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "design-tokens.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  return (
+    <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
+
+      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} />
+
+      {/* Preview Panel */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+
+        {/* Top bar */}
+        <div style={{
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"10px 24px", flexShrink:0,
+          background: alpha(t.background, 0.92),
+          backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+          borderBottom:"1px solid " + (mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"),
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Icon name="eye" size={15} color={t.primary} />
+            <span style={{ fontSize:14, fontWeight:700, color:t.text }}>Live Preview</span>
+          </div>
+          <div style={{
+            display:"flex", alignItems:"center", gap:10,
+            padding:"5px 14px", borderRadius:99,
+            background: mode === "light" ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)",
+          }}>
+            <span style={{ fontSize:12, fontWeight:500, color:t.text, opacity: mode === "light" ? 1 : 0.38 }}>Light</span>
+            <ThemeToggle mode={mode} onToggle={toggleMode} />
+            <span style={{ fontSize:12, fontWeight:500, color:t.text, opacity: mode === "dark" ? 1 : 0.38 }}>Dark</span>
+          </div>
+          <div style={{
+            display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:99,
+            background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)",
+          }}>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e" }} />
+            <span style={{ fontSize:11, fontWeight:500, color:t.text, opacity:0.6 }}>Synced</span>
+          </div>
+        </div>
+
+        {/* Scrollable preview */}
+        <div style={{ flex:1, overflowY:"auto", padding:"24px 32px", background:t.background }}>
+          <div style={{ maxWidth:760, margin:"0 auto" }}>
+            <PvNavBar  t={t} mode={mode} meta={meta} />
+            <PvTypo    t={t} mode={mode} fonts={fonts} />
+            <PvButtons t={t} mode={mode} />
+            <PvCards   t={t} mode={mode} />
+            <div style={{ height:40 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
