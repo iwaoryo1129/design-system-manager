@@ -128,18 +128,18 @@ const DEFAULT = {
   light: {
     primary:    "#f59e0b",
     secondary:  "#06b6d4",
-    accent:     "#ef4444",
     background: "#ffffff",
     text:       "#0f172a",
+    subtext:    "#64748b",
     line:       "#e2e8f0",
     rSm: 4, rMd: 8, rLg: 16,
   },
   dark: {
     primary:    "#fbbf24",
     secondary:  "#22d3ee",
-    accent:     "#f87171",
     background: "#0f172a",
     text:       "#e2e8f0",
+    subtext:    "#94a3b8",
     line:       "#1e293b",
     rSm: 4, rMd: 8, rLg: 16,
   },
@@ -396,7 +396,7 @@ function FontSelector({ tag, font, candidates, onChange, col, sub, sep, primary,
         <span style={{ fontSize:9, fontWeight:700, letterSpacing:"0.07em", padding:"2px 6px", borderRadius:4, background:tagBg, color:tagColor, flexShrink:0 }}>
           {tag}
         </span>
-        <span style={{ fontSize:11, color:sub }}>{isJP ? "和文" : "欧文"}</span>
+        <span style={{ fontSize:11, color:sub }}>{isJP ? "Japanese" : "Latin"}</span>
         {statusIcon && (
           <span style={{ fontSize:11, color:statusColor, marginLeft:"auto", fontWeight:600 }}>{statusIcon}</span>
         )}
@@ -526,7 +526,7 @@ function InlineEdit({ value, onChange, placeholder, fontSize, fontWeight, color,
   );
 }
 
-function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport }) {
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML }) {
   const [tab, setTab] = React.useState("colors");
   const t   = tokens[mode];
   const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
@@ -563,7 +563,7 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
                 sub={sub} primary={t.primary} maxWidth="150px" />
               <div>
                 <InlineEdit value={meta.company} onChange={v => onMetaUpdate("company",v)}
-                  placeholder="+ 会社名を追加" fontSize={11} fontWeight={400} color={sub}
+                  placeholder="+ Add company" fontSize={11} fontWeight={400} color={sub}
                   sub={sub} primary={t.primary} maxWidth="150px" />
               </div>
             </div>
@@ -576,8 +576,8 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
           padding:"6px 10px", borderRadius:8,
         }}>
           <div style={{ width:7, height:7, borderRadius:"50%", background:t.primary }} />
-          <span style={{ fontSize:12, fontWeight:600 }}>{mode === "light" ? "Light Mode" : "Dark Mode"}</span>
-          <span style={{ fontSize:11, color:sub, marginLeft:"auto" }}>編集中</span>
+          <span style={{ fontSize:12, fontWeight:600 }}>{mode === "light" ? "Light" : "Dark"} Mode</span>
+          <span style={{ fontSize:11, color:sub, marginLeft:"auto" }}>Editing</span>
         </div>
       </div>
 
@@ -601,26 +601,14 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2, marginTop:2 }}>Brand</p>
             <ColorRow label="Primary"   value={t.primary}   onChange={v => onUpdate("primary",v)}   text={col} sub={sub} sep={sep} primary={t.primary} />
             <ColorRow label="Secondary" value={t.secondary} onChange={v => onUpdate("secondary",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
-            <ColorRow label="Accent"    value={t.accent}    onChange={v => onUpdate("accent",v)}    text={col} sub={sub} sep={sep} primary={t.primary} />
 
             <Divider sep={sep} />
 
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2 }}>Base</p>
             <ColorRow label="Background" value={t.background} onChange={v => onUpdate("background",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
             <ColorRow label="Text"       value={t.text}       onChange={v => onUpdate("text",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
+            <ColorRow label="Subtext"    value={t.subtext}    onChange={v => onUpdate("subtext",v)}    text={col} sub={sub} sep={sep} primary={t.primary} />
             <ColorRow label="Line"       value={t.line}       onChange={v => onUpdate("line",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
-
-            <Divider sep={sep} />
-
-            <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:8 }}>Swatch</p>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
-              {[["Primary",t.primary],["Secondary",t.secondary],["Accent",t.accent],["BG",t.background],["Text",t.text],["Line",t.line]].map(([lbl,clr]) => (
-                <div key={lbl} style={{ textAlign:"center" }}>
-                  <div style={{ height:44, borderRadius:10, background:clr, marginBottom:5, border:"1px solid " + sep }} />
-                  <span style={{ fontSize:9, color:sub }}>{lbl}</span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
@@ -678,7 +666,15 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
       </div>
 
       {/* Export */}
-      <div style={{ padding:"12px 16px", borderTop:"1px solid " + sep }}>
+      <div style={{ padding:"12px 16px", borderTop:"1px solid " + sep, display:"flex", flexDirection:"column", gap:8 }}>
+        <button className="btn" onClick={onExportHTML} style={{
+          width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          padding:"10px 0", borderRadius:t.rMd, border:"1.5px solid " + sep, cursor:"pointer",
+          background:"transparent", color:mode === "light" ? "#0f172a" : "#e2e8f0", fontSize:13, fontWeight:600,
+        }}>
+          <Icon name="layers" size={15} color={mode === "light" ? "#0f172a" : "#e2e8f0"} />
+          Export HTML
+        </button>
         <button className="btn" onClick={onExport} style={{
           width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
           padding:"10px 0", borderRadius:t.rMd, border:"none", cursor:"pointer",
@@ -716,12 +712,12 @@ function DocSectionHeader({ num, title, desc, textColor, subColor, lineColor }) 
 function DocColorGrid({ t, mode }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const colors = [
-    { token:"brand.primary",   hex:t.primary,    desc:"プライマリー" },
-    { token:"brand.secondary", hex:t.secondary,  desc:"セカンダリー" },
-    { token:"brand.accent",    hex:t.accent,     desc:"アクセント" },
-    { token:"brand.bg",        hex:t.background, desc:"背景" },
-    { token:"brand.text",      hex:t.text,       desc:"テキスト" },
-    { token:"brand.line",      hex:t.line,       desc:"ライン / ボーダー" },
+    { token:"brand.primary",   hex:t.primary,    desc:"Primary" },
+    { token:"brand.secondary", hex:t.secondary,  desc:"Secondary" },
+    { token:"brand.bg",        hex:t.background, desc:"Background" },
+    { token:"brand.text",      hex:t.text,       desc:"Text" },
+    { token:"brand.subtext",   hex:t.subtext,    desc:"Subtext" },
+    { token:"brand.line",      hex:t.line,       desc:"Line / Border" },
   ];
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", border:"1px solid "+t.line, overflow:"hidden" }}>
@@ -748,12 +744,12 @@ function DocFontSpecimen({ t, mode, fonts }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", border:"1px solid "+t.line, overflow:"hidden", marginBottom:16 }}>
       <div style={{ padding:"24px 28px", borderRight:"1px solid "+t.line, background:t.background }}>
-        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>日本語 — JAPANESE</p>
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>Japanese — JP</p>
         <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.ja.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>あア日本語</p>
         <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.ja.name} · --font-jp</p>
       </div>
       <div style={{ padding:"24px 28px", background:t.background }}>
-        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>欧文 — LATIN</p>
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>Latin — EN</p>
         <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.en.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>Aa Bb Cc</p>
         <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.en.name} · --font-latin</p>
       </div>
@@ -765,13 +761,13 @@ function DocTypeTable({ t, mode, fonts }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const headerBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
   const rows = [
-    { pt:64, lh:"140%", sample:"見出し大",           role:"ヒーロー",   w:700 },
-    { pt:48, lh:"140%", sample:"ページタイトル",     role:"h1",         w:700 },
-    { pt:32, lh:"140%", sample:"セクション見出し",   role:"h2",         w:600 },
-    { pt:18, lh:"180%", sample:"素早い茶色の狐は怠惰な犬を飛び越えます", role:"本文大", w:400 },
-    { pt:16, lh:"160%", sample:"タイポグラフィは文字を美しく整える技術です", role:"本文", w:400 },
-    { pt:14, lh:"160%", sample:"良いデザインはできる限りシンプルです",   role:"本文小", w:400 },
-    { pt:12, lh:"140%", sample:"キャプション — サイズ12pt · 行間140%", role:"caption", w:400 },
+    { pt:64, lh:"140%", sampleJP:"見出し大",           sampleEN:"Design Systems",   role:"Hero",    w:700 },
+    { pt:48, lh:"140%", sampleJP:"ページタイトル",     sampleEN:"Typography Scale", role:"h1",      w:700 },
+    { pt:32, lh:"140%", sampleJP:"セクション見出し",   sampleEN:"Font Specimen",    role:"h2",      w:600 },
+    { pt:18, lh:"180%", sampleJP:"素早い茶色の狐は怠惰な犬を飛び越えます", sampleEN:"The quick brown fox jumps over the lazy dog.", role:"Body L", w:400 },
+    { pt:16, lh:"160%", sampleJP:"タイポグラフィは文字を美しく整える技術です", sampleEN:"Typography is the art of arranging type.", role:"Body", w:400 },
+    { pt:14, lh:"160%", sampleJP:"良いデザインはできる限りシンプルです", sampleEN:"Good design is as little design as possible.", role:"Body S", w:400 },
+    { pt:12, lh:"140%", sampleJP:"キャプション — サイズ12pt · 行間140%", sampleEN:"Caption — 12pt · 140% line-height", role:"Caption", w:400 },
   ];
   const cols = "80px 70px 1fr 90px";
   const hdCell = (label, last) => (
@@ -784,7 +780,7 @@ function DocTypeTable({ t, mode, fonts }) {
   return (
     <div style={{ border:"1px solid "+t.line, overflow:"hidden" }}>
       <div style={{ display:"grid", gridTemplateColumns:cols, height:40, background:headerBg, borderBottom:"1px solid "+t.line }}>
-        {hdCell("サイズ")} {hdCell("行間")} {hdCell("サンプル")} {hdCell("用途", true)}
+        {hdCell("Size")} {hdCell("Line height")} {hdCell("Sample")} {hdCell("Role", true)}
       </div>
       {rows.map((row, i) => {
         const px = Math.min(Math.round(row.pt * PT), 60);
@@ -797,12 +793,8 @@ function DocTypeTable({ t, mode, fonts }) {
             <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.pt}pt</div>
             <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.lh}</div>
             <div style={{ padding:"8px 14px", borderRight:"1px solid "+t.line, overflow:"hidden" }}>
-              <span style={{
-                fontSize:px, fontWeight:row.w,
-                fontFamily:fonts.ja.name+", sans-serif",
-                color:t.text, lineHeight:1.25,
-                display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
-              }}>{row.sample}</span>
+              <span style={{ fontSize:px, fontWeight:row.w, fontFamily:fonts.en.name+", sans-serif", color:t.text, lineHeight:1.25, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{row.sampleEN}</span>
+              <span style={{ fontSize:px, fontWeight:row.w, fontFamily:fonts.ja.name+", sans-serif", color:t.text, lineHeight:1.25, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", opacity:0.6 }}>{row.sampleJP}</span>
             </div>
             <div style={{ padding:"0 14px", fontSize:12, color:sub, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{row.role}</div>
           </div>
@@ -817,15 +809,15 @@ function DocHeader({ t, mode, meta }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const colors = [
     { label:"Text",       hex:t.text },
+    { label:"Subtext",    hex:t.subtext },
     { label:"Background", hex:t.background },
     { label:"Primary",    hex:t.primary },
     { label:"Secondary",  hex:t.secondary },
-    { label:"Accent",     hex:t.accent },
     { label:"Line",       hex:t.line },
   ];
   return (
     <div style={{ paddingBottom:32, marginBottom:8 }}>
-      <p style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", color:t.accent, marginBottom:16, textTransform:"uppercase" }}>
+      <p style={{ fontSize:11, fontWeight:700, letterSpacing:"0.12em", color:t.primary, marginBottom:16, textTransform:"uppercase" }}>
         {meta.name || "Design System"}{meta.company ? " — "+meta.company : ""}
       </p>
       <div style={{ display:"flex", gap:24, flexWrap:"wrap" }}>
@@ -845,10 +837,10 @@ function DocHeader({ t, mode, meta }) {
 function DocStats({ t, mode }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const stats = [
-    { num:6,                         label:"カラー" },
-    { num:8,                         label:"スペーシング (px)" },
-    { num:Object.keys(TYPO).length,  label:"タイプサイズ" },
-    { num:t.rMd+"px",               label:"角丸 (md)" },
+    { num:6,                         label:"Colors" },
+    { num:8,                         label:"Spacing (px)" },
+    { num:Object.keys(TYPO).length,  label:"Type sizes" },
+    { num:t.rMd+"px",               label:"Radius (md)" },
   ];
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", marginBottom:64, border:"1px solid "+t.line, overflow:"hidden" }}>
@@ -871,14 +863,14 @@ function DocSpacing({ t, mode }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const headerBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
   const spacings = [
-    { key:"--sp-4",  px:4,  desc:"デザイン間隔・ラベル" },
-    { key:"--sp-8",  px:8,  desc:"インプットのパディング" },
-    { key:"--sp-16", px:16, desc:"カードのパディング" },
-    { key:"--sp-24", px:24, desc:"セクションの区切り" },
-    { key:"--sp-40", px:40, desc:"コンポーネント間" },
-    { key:"--sp-56", px:56, desc:"サブセクション間" },
-    { key:"--sp-72", px:72, desc:"セクション間" },
-    { key:"--sp-96", px:96, desc:"ページレベルの余白" },
+    { key:"--sp-4",  px:4,  desc:"Design spacing · Labels" },
+    { key:"--sp-8",  px:8,  desc:"Input padding" },
+    { key:"--sp-16", px:16, desc:"Card padding" },
+    { key:"--sp-24", px:24, desc:"Section divider" },
+    { key:"--sp-40", px:40, desc:"Component gap" },
+    { key:"--sp-56", px:56, desc:"Sub-section gap" },
+    { key:"--sp-72", px:72, desc:"Section gap" },
+    { key:"--sp-96", px:96, desc:"Page margin" },
   ];
   const cols = "120px 56px 1fr 1fr";
   const hd = (label, last) => (
@@ -887,14 +879,14 @@ function DocSpacing({ t, mode }) {
   return (
     <div style={{ border:"1px solid "+t.line, overflow:"hidden" }}>
       <div style={{ display:"grid", gridTemplateColumns:cols, height:40, background:headerBg, borderBottom:"1px solid "+t.line }}>
-        {hd("キーネーム")} {hd("値")} {hd("スケール")} {hd("主な用途", true)}
+        {hd("Key")} {hd("Value")} {hd("Scale")} {hd("Usage", true)}
       </div>
       {spacings.map((s,i) => (
         <div key={s.key} style={{ display:"grid", gridTemplateColumns:cols, borderBottom:i<spacings.length-1?"1px solid "+t.line:"none", background:t.background, height:44, alignItems:"center" }}>
           <div style={{ padding:"0 14px", fontSize:12, fontFamily:"monospace", color:t.text, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{s.key}</div>
           <div style={{ padding:"0 14px", fontSize:12, color:sub, borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>{s.px}px</div>
           <div style={{ padding:"0 14px", borderRight:"1px solid "+t.line, alignSelf:"stretch", display:"flex", alignItems:"center" }}>
-            <div style={{ height:8, width:Math.round((s.px/96)*160), background:t.accent, borderRadius:2, maxWidth:"100%" }} />
+            <div style={{ height:8, width:Math.round((s.px/96)*160), background:t.primary, borderRadius:2, maxWidth:"100%" }} />
           </div>
           <div style={{ padding:"0 14px", fontSize:12, color:sub }}>{s.desc}</div>
         </div>
@@ -922,29 +914,29 @@ function DocButtons({ t, mode }) {
   return (
     <div style={{ border, overflow:"hidden" }}>
       <div style={row()}>
-        <div style={lbl}>バリアント</div>
+        <div style={lbl}>Variant</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
-          <Btn label="プライマリ" bg={t.primary} color="white" />
-          <Btn label="セカンダリ" bg={t.secondary} color="white" />
-          <Btn label="アクセント" bg={t.accent} color="white" />
-          <Btn label="ゴースト" bg="transparent" color={t.text} bdr={"1.5px solid "+t.line} />
+          <Btn label="Primary"   bg={t.primary}   color="white" />
+          <Btn label="Secondary" bg={t.secondary} color="white" />
+          <Btn label="Outline"   bg="transparent" color={t.primary} bdr={"1.5px solid "+t.primary} />
+          <Btn label="Ghost"     bg="transparent" color={t.text}    bdr={"1.5px solid "+t.line} />
         </div>
       </div>
       <div style={row()}>
-        <div style={lbl}>サイズ</div>
+        <div style={lbl}>Size</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center" }}>
-          <Btn label="小 (sm)" bg={t.primary} color="white" size="sm" />
-          <Btn label="標準" bg={t.primary} color="white" />
-          <Btn label="大 (lg)" bg={t.primary} color="white" size="lg" />
+          <Btn label="Small"   bg={t.primary} color="white" size="sm" />
+          <Btn label="Default" bg={t.primary} color="white" />
+          <Btn label="Large"   bg={t.primary} color="white" size="lg" />
         </div>
       </div>
       <div style={row(true)}>
-        <div style={lbl}>ステート</div>
+        <div style={lbl}>State</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
-          <Btn label="デフォルト" bg={t.accent} color="white" />
-          <Btn label="ホバー" bg="transparent" color={t.accent} bdr={"1.5px solid "+t.accent} />
-          <Btn label="ダウンロード" bg={t.primary} color="white" icon="download" />
-          <Btn label="ライブ" bg="transparent" color={sub} bdr={"1.5px solid "+t.line} />
+          <Btn label="Default"  bg={t.primary}   color="white" />
+          <Btn label="Hover"    bg="transparent" color={t.primary} bdr={"1.5px solid "+t.primary} />
+          <Btn label="Download" bg={t.primary}   color="white" icon="download" />
+          <Btn label="Live"     bg="transparent" color={sub}    bdr={"1.5px solid "+t.line} />
         </div>
       </div>
     </div>
@@ -966,30 +958,30 @@ function DocBadges({ t, mode }) {
   return (
     <div style={{ border, overflow:"hidden" }}>
       <div style={row()}>
-        <div style={lbl}>バリアント</div>
+        <div style={lbl}>Variant</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-          <Badge label="アクセント" bg={t.accent} color="white" />
-          <Badge label="アウトライン" bg="transparent" color={t.text} bdr={"1.5px solid "+t.line} />
-          <Badge label="塗りつぶし" bg={t.primary} color="white" />
+          <Badge label="Primary"  bg={t.primary}   color="white" />
+          <Badge label="Outline"  bg="transparent" color={t.text} bdr={"1.5px solid "+t.line} />
+          <Badge label="Filled"   bg={t.secondary} color="white" />
         </div>
       </div>
       <div style={row()}>
-        <div style={lbl}>ステータス</div>
+        <div style={lbl}>Status</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-          <Badge label="アクティブ"  bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}  color={lg(["#15803d","#4ade80"])} />
-          <Badge label="非接続中"    bg={lg(["#fef9c3","rgba(234,179,8,0.15)"])}   color={lg(["#a16207","#facc15"])} />
-          <Badge label="オフライン"  bg={lg(["#f1f5f9","rgba(148,163,184,0.15)"])} color={sub} />
+          <Badge label="Active"       bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}  color={lg(["#15803d","#4ade80"])} />
+          <Badge label="Disconnected" bg={lg(["#fef9c3","rgba(234,179,8,0.15)"])}  color={lg(["#a16207","#facc15"])} />
+          <Badge label="Offline"      bg={lg(["#f1f5f9","rgba(148,163,184,0.15)"])} color={sub} />
         </div>
       </div>
       <div style={row(true)}>
-        <div style={lbl}>ラベル</div>
+        <div style={lbl}>Label</div>
         <div style={{ padding:"14px 20px", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-          <Badge label="v1.0"   bg={t.accent} color="white" />
-          <Badge label="公開済み" bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}   color={lg(["#15803d","#4ade80"])} />
-          <Badge label="下書き"  bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])}  color={sub} />
-          <Badge label="非推奨"  bg={lg(["#fef2f2","rgba(239,68,68,0.1)"])}    color={lg(["#dc2626","#f87171"])} />
-          <Badge label="ベータ"  bg={lg(["#eff6ff","rgba(96,165,250,0.15)"])}  color={lg(["#1d4ed8","#60a5fa"])} />
-          <Badge label="アーカイブ" bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])} color={sub} />
+          <Badge label="v1.0"       bg={t.primary} color="white" />
+          <Badge label="Published"  bg={lg(["#dcfce7","rgba(34,197,94,0.15)"])}   color={lg(["#15803d","#4ade80"])} />
+          <Badge label="Draft"      bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])}  color={sub} />
+          <Badge label="Deprecated" bg={lg(["#fef2f2","rgba(239,68,68,0.1)"])}    color={lg(["#dc2626","#f87171"])} />
+          <Badge label="Beta"       bg={lg(["#eff6ff","rgba(96,165,250,0.15)"])}  color={lg(["#1d4ed8","#60a5fa"])} />
+          <Badge label="Archive"    bg={lg(["#f1f5f9","rgba(148,163,184,0.1)"])}  color={sub} />
         </div>
       </div>
     </div>
@@ -1010,8 +1002,8 @@ function DocForm({ t, mode }) {
       <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom:10 }}>
         <div onClick={() => onChange(!checked)} style={{
           width:16, height:16, borderRadius:3, flexShrink:0,
-          border:"1.5px solid "+(checked ? t.accent : t.line),
-          background: checked ? t.accent : "transparent",
+          border:"1.5px solid "+(checked ? t.primary : t.line),
+          background: checked ? t.primary : "transparent",
           display:"flex", alignItems:"center", justifyContent:"center",
         }}>
           {checked && <Icon name="check" size={10} color="white" strokeWidth={3} />}
@@ -1024,7 +1016,7 @@ function DocForm({ t, mode }) {
     return (
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
         <span style={{ fontSize:13, color:t.text }}>{label}</span>
-        <div className={"toggle-track "+(on?"toggle-on":"")} style={{ background:on ? t.accent : t.line }} onClick={() => onChange(!on)}>
+        <div className={"toggle-track "+(on?"toggle-on":"")} style={{ background:on ? t.primary : t.line }} onClick={() => onChange(!on)}>
           <div className="toggle-thumb" />
         </div>
       </div>
@@ -1039,21 +1031,21 @@ function DocForm({ t, mode }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", border, overflow:"hidden" }}>
       <div style={{ padding:24 }}>
-        {fld("メールアドレス", <input type="email" placeholder="name@company.com" style={inputSt} readOnly />)}
-        {fld("パスワード", <input type="password" placeholder="••••••••" style={inputSt} readOnly />)}
-        {fld("X月までに完成させてください", <textarea rows={3} placeholder="詳細を入力..." style={{ ...inputSt, resize:"none", display:"block" }} readOnly />)}
-        {fld("役割", <select style={{ ...inputSt, cursor:"pointer" }}><option>デザイナー</option><option>エンジニア</option></select>)}
-        {fld("現在地", <input type="text" placeholder="都市名" style={inputSt} readOnly />)}
+        {fld("Email address", <input type="email" placeholder="name@company.com" style={inputSt} readOnly />)}
+        {fld("Password", <input type="password" placeholder="••••••••" style={inputSt} readOnly />)}
+        {fld("Please complete by end of month", <textarea rows={3} placeholder="Enter details..." style={{ ...inputSt, resize:"none", display:"block" }} readOnly />)}
+        {fld("Role", <select style={{ ...inputSt, cursor:"pointer" }}><option>Designer</option><option>Engineer</option></select>)}
+        {fld("Location", <input type="text" placeholder="City name" style={inputSt} readOnly />)}
       </div>
       <div style={{ padding:24, borderLeft:border }}>
-        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 14px" }}>通知設定</p>
-        <Chk label="メール通知"     checked={checks.mail}   onChange={v => setChecks(p => ({...p, mail:v}))} />
-        <Chk label="プッシュ通知"   checked={checks.push}   onChange={v => setChecks(p => ({...p, push:v}))} />
-        <Chk label="週次ダイジェスト" checked={checks.digest} onChange={v => setChecks(p => ({...p, digest:v}))} />
-        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"20px 0 14px" }}>機能フラグ</p>
-        <Tog label="ダークモード"   on={togs.dark}      onChange={v => setTogs(p => ({...p, dark:v}))} />
-        <Tog label="ベータ機能"     on={togs.beta}      onChange={v => setTogs(p => ({...p, beta:v}))} />
-        <Tog label="アナリティクス" on={togs.analytics}  onChange={v => setTogs(p => ({...p, analytics:v}))} />
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 14px" }}>Notifications</p>
+        <Chk label="Email notifications" checked={checks.mail}   onChange={v => setChecks(p => ({...p, mail:v}))} />
+        <Chk label="Push notifications"  checked={checks.push}   onChange={v => setChecks(p => ({...p, push:v}))} />
+        <Chk label="Weekly digest"       checked={checks.digest} onChange={v => setChecks(p => ({...p, digest:v}))} />
+        <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"20px 0 14px" }}>Feature flags</p>
+        <Tog label="Dark mode"   on={togs.dark}      onChange={v => setTogs(p => ({...p, dark:v}))} />
+        <Tog label="Beta features" on={togs.beta}    onChange={v => setTogs(p => ({...p, beta:v}))} />
+        <Tog label="Analytics"   on={togs.analytics}  onChange={v => setTogs(p => ({...p, analytics:v}))} />
       </div>
     </div>
   );
@@ -1063,8 +1055,8 @@ function DocForm({ t, mode }) {
 function DocNav({ t, mode }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const border = "1px solid "+t.line;
-  const [activeTab, setActiveTab] = React.useState("概要");
-  const tabs = ["概要","コンポーネント","トークン","変更履歴"];
+  const [activeTab, setActiveTab] = React.useState("Overview");
+  const tabs = ["Overview","Components","Tokens","Changelog"];
   return (
     <div>
       <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 12px" }}>タブ</p>
@@ -1075,23 +1067,23 @@ function DocNav({ t, mode }) {
             return (
               <button key={tab} onClick={() => setActiveTab(tab)} style={{
                 padding:"10px 14px", fontSize:13, fontWeight:active?700:400,
-                color:active ? t.accent : t.text, opacity:active?1:0.55,
+                color:active ? t.primary : t.text, opacity:active?1:0.55,
                 background:"transparent", border:"none", cursor:"pointer",
-                borderBottom:"2px solid "+(active ? t.accent : "transparent"),
+                borderBottom:"2px solid "+(active ? t.primary : "transparent"),
                 marginBottom:-1, transition:"all 0.15s ease",
               }}>{tab}</button>
             );
           })}
         </div>
         <div style={{ padding:16, background:t.background, fontSize:13, color:t.text, opacity:0.65 }}>
-          タブパネルのコンテンツがここに表示されます。
+          Tab panel content is displayed here.
         </div>
       </div>
-      <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 12px" }}>パンくずリスト</p>
+      <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 12px" }}>Breadcrumb</p>
       <div style={{ border, borderRadius:t.rSm, padding:"12px 16px", background:t.background, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-        {["ホーム","コンポーネント","ナビゲーション","パンくずリスト"].map((item,i,arr) => (
+        {["Home","Components","Navigation","Breadcrumb"].map((item,i,arr) => (
           <React.Fragment key={item}>
-            <span style={{ fontSize:13, color:i===arr.length-1 ? t.text : t.accent, fontWeight:i===arr.length-1?600:400, cursor:i<arr.length-1?"pointer":"default", opacity:i===arr.length-1?1:0.85 }}>{item}</span>
+            <span style={{ fontSize:13, color:i===arr.length-1 ? t.text : t.primary, fontWeight:i===arr.length-1?600:400, cursor:i<arr.length-1?"pointer":"default", opacity:i===arr.length-1?1:0.85 }}>{item}</span>
             {i < arr.length-1 && <span style={{ fontSize:11, color:sub }}>›</span>}
           </React.Fragment>
         ))}
@@ -1112,38 +1104,38 @@ function DocPreview({ t, mode, fonts, meta }) {
       <DocStats  t={t} mode={mode} />
 
       <section style={{ marginBottom:80 }}>
-        {sec("01","カラー","使用するカラーはこの6値のみ。派生カラーやグラデーションは使用しない。")}
+        {sec("01","Colors","Use only these 6 values. No derived colors or gradients.")}
         <DocColorGrid t={t} mode={mode} />
       </section>
 
       <section style={{ marginBottom:80 }}>
-        {sec("02","タイポグラフィ","日本語に "+fonts.ja.name+"、欧文に "+fonts.en.name+"。サイズと行間は下表の値のみ使用する。")}
+        {sec("02","Typography","Japanese: "+fonts.ja.name+" · Latin: "+fonts.en.name+". Use only the sizes and line heights in the table below.")}
         <DocFontSpecimen t={t} mode={mode} fonts={fonts} />
         <DocTypeTable   t={t} mode={mode} fonts={fonts} />
       </section>
 
       <section style={{ marginBottom:80 }}>
-        {sec("03","スペーシング","すべてのマージン・パディング・ギャップは8ptの倍数のみ使用する。")}
+        {sec("03","Spacing","All margins, padding, and gaps use multiples of 8pt only.")}
         <DocSpacing t={t} mode={mode} />
       </section>
 
       <section style={{ marginBottom:80 }}>
-        {sec("04","ボタン","4バリアント × 3サイズ。角丸なし・シャドウなし。")}
+        {sec("04","Buttons","4 variants × 3 sizes. No border radius · No shadow.")}
         <DocButtons t={t} mode={mode} />
       </section>
 
       <section style={{ marginBottom:80 }}>
-        {sec("05","バッジ","3バリアント。すべて短文・大文字ラベル。")}
+        {sec("05","Badges","3 variants. Short text with uppercase labels.")}
         <DocBadges t={t} mode={mode} />
       </section>
 
       <section style={{ marginBottom:80 }}>
-        {sec("06","フォーム","フォーカス時のボーダーカラーの & brand.accent を使用。")}
+        {sec("06","Form","Focus border uses brand.primary color.")}
         <DocForm t={t} mode={mode} />
       </section>
 
       <section style={{ marginBottom:0 }}>
-        {sec("07","ナビゲーション","タブとパンくずリスト。アクティブ状態の & brand.accent を使用。")}
+        {sec("07","Navigation","Tabs and breadcrumb. Active state uses brand.primary color.")}
         <DocNav t={t} mode={mode} />
       </section>
     </div>
@@ -1431,10 +1423,10 @@ function PvButtons({ t, mode }) {
       <div style={{ display:"flex", flexWrap:"wrap", gap:10, alignItems:"center" }}>
         <Btn label="Primary"    bg={t.primary}    color="white"          hFilter={true} />
         <Btn label="Secondary"  bg={t.secondary}  color="white"          hFilter={true} />
-        <Btn label="Accent"     bg={t.accent}     color="white"          hFilter={true} />
+        <Btn label="Accent"     bg={t.primary}     color="white"          hFilter={true} />
         <Btn label="Ghost"      bg="transparent"  color={t.text} bdr={"1.5px solid "+t.line} hBg={t.line} opacity={0.8} />
         <IcoBtn icon="arrow" bg={t.primary}    r={t.rLg} />
-        <IcoBtn icon="star"  bg={t.accent}     r={t.rMd} />
+        <IcoBtn icon="star"  bg={t.primary}     r={t.rMd} />
       </div>
       <p style={{ fontSize:11, color:t.text, opacity:0.32, marginTop:10 }}>
         Hover → brightness · Click → scale(0.95)
@@ -1548,6 +1540,208 @@ function App() {
     setFonts(prev => ({ ...prev, [key]: value }));
   }
 
+  function exportHTML() {
+    const l = tokens.light;
+    const d = tokens.dark;
+    const now = new Date().toISOString();
+    const slug = (meta.name || "design-system").toLowerCase().replace(/\s+/g,"-");
+
+    const typeScale = [
+      { role:"Hero",    pt:64, lh:"140%", weight:700 },
+      { role:"h1",      pt:48, lh:"140%", weight:700 },
+      { role:"h2",      pt:32, lh:"140%", weight:600 },
+      { role:"h3",      pt:24, lh:"140%", weight:600 },
+      { role:"Body L",  pt:18, lh:"180%", weight:400 },
+      { role:"Body",    pt:16, lh:"160%", weight:400 },
+      { role:"Body S",  pt:14, lh:"160%", weight:400 },
+      { role:"Caption", pt:12, lh:"140%", weight:400 },
+    ].map(r => ({ ...r, px: Math.round(r.pt * 1.333 * 10) / 10 }));
+
+    const spacing = [4,8,16,24,40,56,72,96];
+
+    const colorRows = [
+      { token:"--color-primary",   light:l.primary,    dark:d.primary,    role:"Primary brand color" },
+      { token:"--color-secondary", light:l.secondary,  dark:d.secondary,  role:"Secondary brand color" },
+      { token:"--color-bg",        light:l.background, dark:d.background, role:"Page / surface background" },
+      { token:"--color-text",      light:l.text,       dark:d.text,       role:"Primary text" },
+      { token:"--color-subtext",   light:l.subtext,    dark:d.subtext,    role:"Secondary / muted text" },
+      { token:"--color-line",      light:l.line,       dark:d.line,       role:"Borders and dividers" },
+    ];
+
+    const tokenData = {
+      meta: { name: meta.name, company: meta.company, version:"1.0.0", exportedAt: now },
+      colors: {
+        light: { primary:l.primary, secondary:l.secondary, background:l.background, text:l.text, subtext:l.subtext, line:l.line },
+        dark:  { primary:d.primary, secondary:d.secondary, background:d.background, text:d.text, subtext:d.subtext, line:d.line },
+      },
+      typography: {
+        fonts: {
+          japanese: { name:fonts.ja.name, weights:fonts.ja.weights, cssVar:"--font-jp" },
+          latin:    { name:fonts.en.name, weights:fonts.en.weights, cssVar:"--font-latin" },
+        },
+        scale: typeScale,
+      },
+      spacing: spacing.map(v => ({ token:"--sp-"+v, valuePx:v })),
+      borderRadius: { sm:{ token:"--radius-sm", valuePx:l.rSm }, md:{ token:"--radius-md", valuePx:l.rMd }, lg:{ token:"--radius-lg", valuePx:l.rLg } },
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${meta.name} — Design System Spec</title>
+  <!--
+    ============================================================
+    DESIGN SYSTEM SPECIFICATION
+    System : ${meta.name}${meta.company ? "\n    Company: "+meta.company : ""}
+    Export : ${now}
+    ============================================================
+    HOW TO USE THIS FILE
+    - Paste the <style> block into your project's base CSS.
+    - All tokens are CSS custom properties (var(--color-primary) etc.).
+    - The <script type="application/json"> block contains the full
+      token set as structured JSON for AI / tooling consumption.
+    ============================================================
+  -->
+  <style>
+    /* ── CSS Custom Properties ───────────────────────────────── */
+    :root {
+      /* Colors (light mode) */
+      --color-primary:    ${l.primary};   /* ${colorRows[0].role} */
+      --color-secondary:  ${l.secondary}; /* ${colorRows[1].role} */
+      --color-bg:         ${l.background}; /* ${colorRows[2].role} */
+      --color-text:       ${l.text};      /* ${colorRows[3].role} */
+      --color-subtext:    ${l.subtext};   /* ${colorRows[4].role} */
+      --color-line:       ${l.line};      /* ${colorRows[5].role} */
+
+      /* Typography */
+      --font-jp:    "${fonts.ja.name}", sans-serif;
+      --font-latin: "${fonts.en.name}", sans-serif;
+
+      /* Border Radius */
+      --radius-sm: ${l.rSm}px;
+      --radius-md: ${l.rMd}px;
+      --radius-lg: ${l.rLg}px;
+
+      /* Spacing (8pt grid) */
+      --sp-4:  4px;  --sp-8:  8px;  --sp-16: 16px; --sp-24: 24px;
+      --sp-40: 40px; --sp-56: 56px; --sp-72: 72px; --sp-96: 96px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-primary:    ${d.primary};
+        --color-secondary:  ${d.secondary};
+        --color-bg:         ${d.background};
+        --color-text:       ${d.text};
+        --color-subtext:    ${d.subtext};
+        --color-line:       ${d.line};
+      }
+    }
+
+    /* ── Page layout ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body   { font-family: var(--font-latin); background: var(--color-bg); color: var(--color-text); padding: 48px 64px; line-height: 1.6; max-width: 960px; }
+    h1     { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+    .meta  { font-size: 13px; color: var(--color-subtext); margin-bottom: 48px; font-family: monospace; }
+    h2     { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--color-subtext); margin: 48px 0 16px; border-bottom: 1px solid var(--color-line); padding-bottom: 8px; }
+    table  { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+    th     { text-align: left; padding: 8px 12px; font-size: 11px; color: var(--color-subtext); border-bottom: 1px solid var(--color-line); font-weight: 600; }
+    td     { padding: 10px 12px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .swatch { display: inline-block; width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--color-line); vertical-align: middle; margin-right: 8px; }
+    code   { font-family: monospace; font-size: 12px; background: rgba(0,0,0,.05); padding: 2px 5px; border-radius: 3px; }
+    .bar   { height: 6px; background: var(--color-primary); border-radius: 2px; }
+    .label { color: var(--color-subtext); font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <h1>${meta.name}</h1>
+  <p class="meta">${meta.company ? meta.company+" · " : ""}Exported: ${now}</p>
+
+  <!-- ── 01 Colors ─────────────────────────────────────────── -->
+  <h2>01 · Colors</h2>
+  <table>
+    <thead><tr><th>Swatch</th><th>Token</th><th>Light</th><th>Dark</th><th>Role</th></tr></thead>
+    <tbody>
+      ${colorRows.map(r => `<tr>
+        <td><span class="swatch" style="background:${r.light}"></span></td>
+        <td><code>${r.token}</code></td>
+        <td><code>${r.light.toUpperCase()}</code></td>
+        <td><code>${r.dark.toUpperCase()}</code></td>
+        <td class="label">${r.role}</td>
+      </tr>`).join("\n      ")}
+    </tbody>
+  </table>
+
+  <!-- ── 02 Typography ─────────────────────────────────────── -->
+  <h2>02 · Typography</h2>
+  <table>
+    <thead><tr><th>Font</th><th>Name</th><th>Weights</th><th>CSS Variable</th></tr></thead>
+    <tbody>
+      <tr><td class="label">Japanese</td><td>${fonts.ja.name}</td><td>${fonts.ja.weights.join(", ")}</td><td><code>--font-jp</code></td></tr>
+      <tr><td class="label">Latin</td><td>${fonts.en.name}</td><td>${fonts.en.weights.join(", ")}</td><td><code>--font-latin</code></td></tr>
+    </tbody>
+  </table>
+  <table style="margin-top:16px">
+    <thead><tr><th>Role</th><th>Size (pt)</th><th>Size (px)</th><th>Line Height</th><th>Weight</th></tr></thead>
+    <tbody>
+      ${typeScale.map(r => `<tr>
+        <td>${r.role}</td>
+        <td><code>${r.pt}pt</code></td>
+        <td><code>${r.px}px</code></td>
+        <td><code>${r.lh}</code></td>
+        <td><code>${r.weight}</code></td>
+      </tr>`).join("\n      ")}
+    </tbody>
+  </table>
+
+  <!-- ── 03 Spacing ────────────────────────────────────────── -->
+  <h2>03 · Spacing</h2>
+  <table>
+    <thead><tr><th>Token</th><th>Value</th><th>Scale</th></tr></thead>
+    <tbody>
+      ${spacing.map(v => `<tr>
+        <td><code>--sp-${v}</code></td>
+        <td><code>${v}px</code></td>
+        <td><div class="bar" style="width:${Math.round(v/96*240)}px"></div></td>
+      </tr>`).join("\n      ")}
+    </tbody>
+  </table>
+
+  <!-- ── 04 Border Radius ───────────────────────────────────── -->
+  <h2>04 · Border Radius</h2>
+  <table>
+    <thead><tr><th>Token</th><th>Light</th><th>Dark</th></tr></thead>
+    <tbody>
+      <tr><td><code>--radius-sm</code></td><td><code>${l.rSm}px</code></td><td><code>${d.rSm}px</code></td></tr>
+      <tr><td><code>--radius-md</code></td><td><code>${l.rMd}px</code></td><td><code>${d.rMd}px</code></td></tr>
+      <tr><td><code>--radius-lg</code></td><td><code>${l.rLg}px</code></td><td><code>${d.rLg}px</code></td></tr>
+    </tbody>
+  </table>
+
+  <!--
+    ============================================================
+    MACHINE-READABLE TOKEN DATA (JSON)
+    AI / tooling can parse the following block directly.
+    ============================================================
+  -->
+  <script type="application/json" id="design-system-tokens">
+${JSON.stringify(tokenData, null, 2)}
+  </script>
+
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type:"text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = slug + "-spec.html";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   function exportJSON() {
     const out = {
       version: "1.0.0",
@@ -1564,8 +1758,8 @@ function App() {
         }])
       ),
       colors: {
-        light: { primary:tokens.light.primary, secondary:tokens.light.secondary, accent:tokens.light.accent, background:tokens.light.background, text:tokens.light.text, line:tokens.light.line },
-        dark:  { primary:tokens.dark.primary,  secondary:tokens.dark.secondary,  accent:tokens.dark.accent,  background:tokens.dark.background,  text:tokens.dark.text,  line:tokens.dark.line  },
+        light: { primary:tokens.light.primary, secondary:tokens.light.secondary, background:tokens.light.background, text:tokens.light.text, subtext:tokens.light.subtext, line:tokens.light.line },
+        dark:  { primary:tokens.dark.primary,  secondary:tokens.dark.secondary,  background:tokens.dark.background,  text:tokens.dark.text,  subtext:tokens.dark.subtext,  line:tokens.dark.line  },
       },
       borderRadius: {
         light: { sm:tokens.light.rSm, md:tokens.light.rMd, lg:tokens.light.rLg },
@@ -1583,7 +1777,7 @@ function App() {
   return (
     <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
 
-      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} />
+      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} />
 
       {/* Preview Panel */}
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
