@@ -648,7 +648,7 @@ function PresetPanel({ presets, onSave, onLoad, onDelete, col, sub, sep, primary
   );
 }
 
-function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onUpdateLight, onUpdateDark, onFontUpdate, onMetaUpdate, onExport, onExportHTML, onExportMD, onImportText, presets, onSavePreset, onLoadPreset, onDeletePreset, typo, onTypoUpdate, buttonSizes, onButtonUpdate }) {
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onUpdateLight, onUpdateDark, onFontUpdate, onMetaUpdate, onExport, onExportHTML, onExportMD, onImportText, presets, onSavePreset, onLoadPreset, onDeletePreset, typo, onTypoUpdate, buttonSizes, onButtonUpdate, isMobile }) {
   const [tab, setTab] = React.useState("colors");
   const t   = tokens[mode];
   const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
@@ -667,9 +667,10 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onUpdateLight,
 
   return (
     <div style={{
-      width:272, flexShrink:0, background:bg, color:col,
-      display:"flex", flexDirection:"column", height:"100vh",
-      borderRight:"1px solid " + sep,
+      width: isMobile ? "100%" : 272, flexShrink:0, background:bg, color:col,
+      display:"flex", flexDirection:"column", height: isMobile ? "100%" : "100vh",
+      borderRight: isMobile ? "none" : "1px solid " + sep,
+      borderBottom: isMobile ? "none" : "none",
     }}>
       {/* Header */}
       <div style={{ padding:"14px 16px", borderBottom:"1px solid " + sep }}>
@@ -886,7 +887,7 @@ function DocSectionHeader({ num, title, desc, textColor, subColor, lineColor }) 
   );
 }
 
-function DocColorGrid({ t, mode }) {
+function DocColorGrid({ t, mode, isMobile }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const colors = [
     { token:"brand.primary",   hex:t.primary,    desc:"Primary" },
@@ -896,11 +897,12 @@ function DocColorGrid({ t, mode }) {
     { token:"brand.subtext",   hex:t.subtext,    desc:"Subtext" },
     { token:"brand.line",      hex:t.line,       desc:"Line / Border" },
   ];
+  const cols = isMobile ? 2 : 3;
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", border:"1px solid "+t.line, overflow:"hidden" }}>
+    <div style={{ display:"grid", gridTemplateColumns:`repeat(${cols},1fr)`, border:"1px solid "+t.line, overflow:"hidden" }}>
       {colors.map((c, i) => {
-        const rightBorder = (i+1) % 3 !== 0 ? "1px solid "+t.line : "none";
-        const bottomBorder = i < 3 ? "1px solid "+t.line : "none";
+        const rightBorder = (i+1) % cols !== 0 ? "1px solid "+t.line : "none";
+        const bottomBorder = i < cols ? "1px solid "+t.line : "none";
         return (
           <div key={c.token} style={{ borderRight:rightBorder, borderBottom:bottomBorder }}>
             <div style={{ height:110, background:c.hex }} />
@@ -916,16 +918,16 @@ function DocColorGrid({ t, mode }) {
   );
 }
 
-function DocFontSpecimen({ t, mode, fonts }) {
+function DocFontSpecimen({ t, mode, fonts, isMobile }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", border:"1px solid "+t.line, overflow:"hidden", marginBottom:16 }}>
-      <div style={{ padding:"24px 28px", borderRight:"1px solid "+t.line, background:t.background }}>
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", border:"1px solid "+t.line, overflow:"hidden", marginBottom:16 }}>
+      <div style={{ padding: isMobile ? "20px" : "24px 28px", borderRight: isMobile ? "none" : "1px solid "+t.line, borderBottom: isMobile ? "1px solid "+t.line : "none", background:t.background }}>
         <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>Japanese — JP</p>
         <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.ja.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>あア日本語</p>
         <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.ja.name} · --font-jp</p>
       </div>
-      <div style={{ padding:"24px 28px", background:t.background }}>
+      <div style={{ padding: isMobile ? "20px" : "24px 28px", background:t.background }}>
         <p style={{ fontSize:11, fontWeight:600, color:sub, letterSpacing:"0.05em", margin:"0 0 20px" }}>Latin — EN</p>
         <p style={{ fontSize:54, fontWeight:700, fontFamily:fonts.en.name+", sans-serif", color:t.text, lineHeight:1.2, margin:"0 0 20px" }}>Aa Bb Cc</p>
         <p style={{ fontSize:12, color:sub, fontFamily:"monospace", margin:0 }}>{fonts.en.name} · --font-latin</p>
@@ -1022,7 +1024,7 @@ function DocHeader({ t, mode, meta }) {
 }
 
 /* ─── DocStats ─── */
-function DocStats({ t, mode }) {
+function DocStats({ t, mode, isMobile }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const stats = [
     { num:6,                         label:"Colors" },
@@ -1031,11 +1033,12 @@ function DocStats({ t, mode }) {
     { num:t.rMd+"px",               label:"Radius (md)" },
   ];
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", marginBottom:64, border:"1px solid "+t.line, overflow:"hidden" }}>
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", marginBottom:isMobile?32:64, border:"1px solid "+t.line, overflow:"hidden" }}>
       {stats.map((s,i) => (
         <div key={s.label} style={{
           padding:"24px 20px",
-          borderRight: i < stats.length-1 ? "1px solid "+t.line : "none",
+          borderRight: (isMobile ? (i+1)%2!==0 : i < stats.length-1) ? "1px solid "+t.line : "none",
+          borderBottom: isMobile && i < 2 ? "1px solid "+t.line : "none",
           background:t.background,
         }}>
           <p style={{ fontSize:40, fontWeight:700, color:t.text, margin:"0 0 6px", lineHeight:1 }}>{s.num}</p>
@@ -1283,43 +1286,44 @@ function DocNav({ t, mode }) {
 }
 
 /* ─── DocPreview ─── */
-function DocPreview({ t, mode, fonts, meta, typo, buttonSizes }) {
+function DocPreview({ t, mode, fonts, meta, typo, buttonSizes, isMobile }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const sec = (n, title, desc) => (
     <DocSectionHeader num={n} title={title} desc={desc} textColor={t.text} subColor={sub} lineColor={t.line} />
   );
+  const secMb = isMobile ? 48 : 80;
   return (
-    <div style={{ maxWidth:880, margin:"0 auto", padding:"48px 0 96px" }}>
+    <div style={{ maxWidth:880, margin:"0 auto", padding: isMobile ? "24px 0 60px" : "48px 0 96px" }}>
       <DocHeader t={t} mode={mode} meta={meta} />
-      <DocStats  t={t} mode={mode} />
+      <DocStats  t={t} mode={mode} isMobile={isMobile} />
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("01","Colors","Use only these 6 values. No derived colors or gradients.")}
-        <DocColorGrid t={t} mode={mode} />
+        <DocColorGrid t={t} mode={mode} isMobile={isMobile} />
       </section>
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("02","Typography","Japanese: "+fonts.ja.name+" · Latin: "+fonts.en.name+". Use only the sizes and line heights in the table below.")}
-        <DocFontSpecimen t={t} mode={mode} fonts={fonts} />
+        <DocFontSpecimen t={t} mode={mode} fonts={fonts} isMobile={isMobile} />
         <DocTypeTable   t={t} mode={mode} fonts={fonts} typo={typo} />
       </section>
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("03","Spacing","All margins, padding, and gaps use multiples of 8pt only.")}
         <DocSpacing t={t} mode={mode} />
       </section>
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("04","Buttons","4 variants × 3 sizes. No border radius · No shadow.")}
         <DocButtons t={t} mode={mode} buttonSizes={buttonSizes} />
       </section>
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("05","Badges","3 variants. Short text with uppercase labels.")}
         <DocBadges t={t} mode={mode} />
       </section>
 
-      <section style={{ marginBottom:80 }}>
+      <section style={{ marginBottom:secMb }}>
         {sec("06","Form","Focus border uses brand.primary color.")}
         <DocForm t={t} mode={mode} />
       </section>
@@ -1720,6 +1724,15 @@ function App() {
   const [fonts, setFonts]   = React.useState(DEFAULT_FONTS);
   const [meta, setMeta]     = React.useState({ name: "Design System", company: "" });
   const [typo, setTypo]     = React.useState(TYPO);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+  const [mobilePanel, setMobilePanel] = React.useState("edit");
+
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
   const [buttonSizes, setButtonSizes] = React.useState({
     sm: { py:4,  px:10, fs:11 },
     md: { py:7,  px:16, fs:13 },
@@ -2184,18 +2197,23 @@ ${JSON.stringify(tokenData, null, 2)}
     URL.revokeObjectURL(a.href);
   }
 
+  const sub = mode === "light" ? "#94a3b8" : "#64748b";
+
   return (
-    <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
+    <div className="theme-root" style={{ display:"flex", flexDirection: isMobile ? "column" : "row", height:"100vh", overflow:"hidden", background:t.background }}>
 
-      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} onExportMD={exportMarkdown} onImportText={importText} onUpdateLight={(k,v) => updateTokenForMode("light",k,v)} onUpdateDark={(k,v) => updateTokenForMode("dark",k,v)} presets={presets} typo={typo} onTypoUpdate={updateTypo} buttonSizes={buttonSizes} onButtonUpdate={updateButtonSize} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
+      {/* Sidebar — hidden on mobile when previewing */}
+      <div style={{ display: isMobile && mobilePanel === "preview" ? "none" : "flex", flexDirection:"column", ...(isMobile ? { flex:1, overflow:"hidden" } : {}) }}>
+        <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} onExportMD={exportMarkdown} onImportText={importText} onUpdateLight={(k,v) => updateTokenForMode("light",k,v)} onUpdateDark={(k,v) => updateTokenForMode("dark",k,v)} presets={presets} typo={typo} onTypoUpdate={updateTypo} buttonSizes={buttonSizes} onButtonUpdate={updateButtonSize} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} isMobile={isMobile} />
+      </div>
 
-      {/* Preview Panel */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      {/* Preview Panel — hidden on mobile when editing */}
+      <div style={{ display: isMobile && mobilePanel === "edit" ? "none" : "flex", flex:1, flexDirection:"column", overflow:"hidden" }}>
 
         {/* Top bar */}
         <div style={{
           display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"10px 24px", flexShrink:0,
+          padding: isMobile ? "8px 16px" : "10px 24px", flexShrink:0,
           background: alpha(t.background, 0.92),
           backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
           borderBottom:"1px solid " + (mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"),
@@ -2213,20 +2231,46 @@ ${JSON.stringify(tokenData, null, 2)}
             <ThemeToggle mode={mode} onToggle={toggleMode} />
             <span style={{ fontSize:12, fontWeight:500, color:t.text, opacity: mode === "dark" ? 1 : 0.38 }}>Dark</span>
           </div>
-          <div style={{
-            display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:99,
-            background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)",
-          }}>
-            <div style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e" }} />
-            <span style={{ fontSize:11, fontWeight:500, color:t.text, opacity:0.6 }}>Synced</span>
-          </div>
+          {!isMobile && (
+            <div style={{
+              display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:99,
+              background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)",
+            }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e" }} />
+              <span style={{ fontSize:11, fontWeight:500, color:t.text, opacity:0.6 }}>Synced</span>
+            </div>
+          )}
         </div>
 
         {/* Scrollable preview */}
-        <div style={{ flex:1, overflowY:"auto", padding:"0 48px", background:t.background }}>
-          <DocPreview t={t} mode={mode} fonts={fonts} meta={meta} typo={typo} buttonSizes={buttonSizes} />
+        <div style={{ flex:1, overflowY:"auto", padding: isMobile ? "0 16px" : "0 48px", background:t.background }}>
+          <DocPreview t={t} mode={mode} fonts={fonts} meta={meta} typo={typo} buttonSizes={buttonSizes} isMobile={isMobile} />
         </div>
       </div>
+
+      {/* Mobile bottom nav */}
+      {isMobile && (
+        <div style={{
+          display:"flex", height:56, flexShrink:0,
+          borderTop:"1px solid "+(mode==="dark"?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.08)"),
+          background:t.background,
+        }}>
+          {[["edit","sliders","Edit"],["preview","eye","Preview"]].map(([panel,icon,label]) => {
+            const active = mobilePanel === panel;
+            return (
+              <button key={panel} onClick={() => setMobilePanel(panel)} style={{
+                flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3,
+                border:"none", background:"transparent", cursor:"pointer",
+                color: active ? t.primary : sub,
+                borderTop: active ? "2px solid "+t.primary : "2px solid transparent",
+              }}>
+                <Icon name={icon} size={18} color={active ? t.primary : sub} />
+                <span style={{ fontSize:10, fontWeight:600 }}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
