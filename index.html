@@ -302,6 +302,37 @@ function ColorRow({ label, value, onChange, text, sub, sep, primary }) {
   );
 }
 
+function MiniColorPicker({ value, onChange, sep, primary, tag, sub }) {
+  const [draft, setDraft]   = React.useState(value.toUpperCase());
+  const [focused, setFocused] = React.useState(false);
+  const [invalid, setInvalid] = React.useState(false);
+  React.useEffect(() => { if (!focused) setDraft(value.toUpperCase()); }, [value, focused]);
+  function handleChange(raw) { setDraft(raw); const n = normalizeHex(raw); if (n) { setInvalid(false); onChange(n); } else setInvalid(true); }
+  function handleBlur() { setFocused(false); const n = normalizeHex(draft); if (n) { setInvalid(false); onChange(n); setDraft(n.toUpperCase()); } else { setInvalid(false); setDraft(value.toUpperCase()); } }
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+      <span style={{ fontSize:9, fontWeight:700, letterSpacing:"0.06em", color:sub, opacity:0.7 }}>{tag}</span>
+      <div style={{ width:34, height:34, borderRadius:8, overflow:"hidden", border:"1.5px solid "+sep, background:value, position:"relative", flexShrink:0, cursor:"pointer" }}>
+        <input type="color" value={value} onChange={e => onChange(e.target.value)} style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0, cursor:"pointer" }} />
+      </div>
+      <input type="text" value={draft} maxLength={7} onFocus={() => setFocused(true)} onBlur={handleBlur} onChange={e => handleChange(e.target.value)} spellCheck={false}
+        style={{ width:52, fontSize:10, fontFamily:"monospace", color: invalid ? "#ef4444" : sub, background:"transparent", border:"none", borderBottom:"1px solid "+(focused?(invalid?"#ef4444":primary):"transparent"), outline:"none", textAlign:"center", padding:"1px 0" }} />
+    </div>
+  );
+}
+
+function DualColorRow({ label, lightVal, darkVal, onChangeLight, onChangeDark, text, sub, sep, primary }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"6px 0" }}>
+      <span style={{ fontSize:13, fontWeight:600, color:text }}>{label}</span>
+      <div style={{ display:"flex", gap:10 }}>
+        <MiniColorPicker value={lightVal} onChange={onChangeLight} sep={sep} primary={primary} tag="LIGHT" sub={sub} />
+        <MiniColorPicker value={darkVal}  onChange={onChangeDark}  sep={sep} primary={primary} tag="DARK"  sub={sub} />
+      </div>
+    </div>
+  );
+}
+
 function RangeRow({ label, value, min, max, unit, onChange, text, sub, primary, bg }) {
   const pct = ((value - min) / (max - min)) * 100;
   const track = "linear-gradient(to right," + primary + " 0%," + primary + " " + pct + "%," + bg + " " + pct + "%," + bg + " 100%)";
@@ -617,7 +648,7 @@ function PresetPanel({ presets, onSave, onLoad, onDelete, col, sub, sep, primary
   );
 }
 
-function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML, onExportMD, onImportText, presets, onSavePreset, onLoadPreset, onDeletePreset, typo, onTypoUpdate, buttonSizes, onButtonUpdate }) {
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onUpdateLight, onUpdateDark, onFontUpdate, onMetaUpdate, onExport, onExportHTML, onExportMD, onImportText, presets, onSavePreset, onLoadPreset, onDeletePreset, typo, onTypoUpdate, buttonSizes, onButtonUpdate }) {
   const [tab, setTab] = React.useState("colors");
   const t   = tokens[mode];
   const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
@@ -691,19 +722,19 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
 
         {tab === "colors" && (
           <div>
-            <SecLabel icon="palette" text={(mode === "light" ? "Light" : "Dark") + " Palette"} sub={sub} />
+            <SecLabel icon="palette" text="Color Palette" sub={sub} />
 
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2, marginTop:2 }}>Brand</p>
-            <ColorRow label="Primary"   value={t.primary}   onChange={v => onUpdate("primary",v)}   text={col} sub={sub} sep={sep} primary={t.primary} />
-            <ColorRow label="Secondary" value={t.secondary} onChange={v => onUpdate("secondary",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Primary"   lightVal={tokens.light.primary}   darkVal={tokens.dark.primary}   onChangeLight={v => onUpdateLight("primary",v)}   onChangeDark={v => onUpdateDark("primary",v)}   text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Secondary" lightVal={tokens.light.secondary} darkVal={tokens.dark.secondary} onChangeLight={v => onUpdateLight("secondary",v)} onChangeDark={v => onUpdateDark("secondary",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
 
             <Divider sep={sep} />
 
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:sub, marginBottom:2 }}>Base</p>
-            <ColorRow label="Background" value={t.background} onChange={v => onUpdate("background",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
-            <ColorRow label="Text"       value={t.text}       onChange={v => onUpdate("text",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
-            <ColorRow label="Subtext"    value={t.subtext}    onChange={v => onUpdate("subtext",v)}    text={col} sub={sub} sep={sep} primary={t.primary} />
-            <ColorRow label="Line"       value={t.line}       onChange={v => onUpdate("line",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Background" lightVal={tokens.light.background} darkVal={tokens.dark.background} onChangeLight={v => onUpdateLight("background",v)} onChangeDark={v => onUpdateDark("background",v)} text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Text"       lightVal={tokens.light.text}       darkVal={tokens.dark.text}       onChangeLight={v => onUpdateLight("text",v)}       onChangeDark={v => onUpdateDark("text",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Subtext"    lightVal={tokens.light.subtext}    darkVal={tokens.dark.subtext}    onChangeLight={v => onUpdateLight("subtext",v)}    onChangeDark={v => onUpdateDark("subtext",v)}    text={col} sub={sub} sep={sep} primary={t.primary} />
+            <DualColorRow label="Line"       lightVal={tokens.light.line}       darkVal={tokens.dark.line}       onChangeLight={v => onUpdateLight("line",v)}       onChangeDark={v => onUpdateDark("line",v)}       text={col} sub={sub} sep={sep} primary={t.primary} />
           </div>
         )}
 
@@ -1832,6 +1863,9 @@ function App() {
   function updateToken(key, value) {
     setTokens(prev => ({ ...prev, [mode]: { ...prev[mode], [key]: value } }));
   }
+  function updateTokenForMode(targetMode, key, value) {
+    setTokens(prev => ({ ...prev, [targetMode]: { ...prev[targetMode], [key]: value } }));
+  }
 
   function updateTypo(key, field, val) {
     setTypo(prev => ({ ...prev, [key]: { ...prev[key], [field]: val } }));
@@ -2153,7 +2187,7 @@ ${JSON.stringify(tokenData, null, 2)}
   return (
     <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
 
-      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} onExportMD={exportMarkdown} onImportText={importText} presets={presets} typo={typo} onTypoUpdate={updateTypo} buttonSizes={buttonSizes} onButtonUpdate={updateButtonSize} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
+      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} onExportMD={exportMarkdown} onImportText={importText} onUpdateLight={(k,v) => updateTokenForMode("light",k,v)} onUpdateDark={(k,v) => updateTokenForMode("dark",k,v)} presets={presets} typo={typo} onTypoUpdate={updateTypo} buttonSizes={buttonSizes} onButtonUpdate={updateButtonSize} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
 
       {/* Preview Panel */}
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
