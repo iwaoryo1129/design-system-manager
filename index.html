@@ -617,7 +617,7 @@ function PresetPanel({ presets, onSave, onLoad, onDelete, col, sub, sep, primary
   );
 }
 
-function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML, presets, onSavePreset, onLoadPreset, onDeletePreset }) {
+function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, onMetaUpdate, onExport, onExportHTML, onExportMD, onImportText, presets, onSavePreset, onLoadPreset, onDeletePreset, typo, onTypoUpdate, buttonSizes, onButtonUpdate }) {
   const [tab, setTab] = React.useState("colors");
   const t   = tokens[mode];
   const bg  = mode === "light" ? "#f8fafc" : "#080f1e";
@@ -714,16 +714,26 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
             <FontSelector tag="EN" font={fonts.en} candidates={GFONTS_EN} onChange={v => onFontUpdate("en",v)} col={col} sub={sub} sep={sep} primary={t.primary} mode={mode} />
             <Divider sep={sep} />
             <SecLabel icon="type" text="Type Scale" sub={sub} />
-            {Object.entries(TYPO).map(([key,v]) => (
-              <div key={key} style={{ padding:"7px 10px", borderRadius:8, marginBottom:5, background: mode === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.04)" }}>
-                <div style={{ display:"flex", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:col }}>{v.label}</span>
-                  <span style={{ fontSize:11, fontFamily:"monospace", color:sub }}>{v.pt}pt</span>
+            {Object.entries(typo).map(([key,v]) => (
+              <div key={key} style={{ padding:"8px 10px", borderRadius:8, marginBottom:6, background: mode === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.04)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:col }}>{v.label}</span>
+                  <span style={{ fontSize:10, fontFamily:"monospace", color:sub }}>{ptPx(v.pt)}px</span>
                 </div>
-                <div style={{ display:"flex", gap:10, marginTop:2 }}>
-                  <span style={{ fontSize:10, color:sub }}>{ptPx(v.pt)}px</span>
-                  <span style={{ fontSize:10, color:sub }}>LH {v.lh}%</span>
-                  <span style={{ fontSize:10, color:sub }}>W{v.w}</span>
+                <RangeRow label="Size" value={v.pt} min={8} max={96} unit="pt" onChange={val => onTypoUpdate(key,"pt",val)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+                <RangeRow label="Line Height" value={v.lh} min={100} max={220} unit="%" onChange={val => onTypoUpdate(key,"lh",val)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0" }}>
+                  <span style={{ fontSize:13, color:col }}>Weight</span>
+                  <div style={{ display:"flex", gap:4 }}>
+                    {[300,400,500,600,700].map(w => (
+                      <button key={w} onClick={() => onTypoUpdate(key,"w",w)} style={{
+                        padding:"2px 7px", borderRadius:5, fontSize:11, fontWeight:w,
+                        border:"1.5px solid "+(v.w===w ? t.primary : sep),
+                        background: v.w===w ? alpha(t.primary,0.12) : "transparent",
+                        color: v.w===w ? t.primary : sub, cursor:"pointer",
+                      }}>{w}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -746,6 +756,22 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
               ))}
             </div>
             <Divider sep={sep} />
+            <SecLabel icon="download" text="Button Sizes" sub={sub} />
+            {[["sm","Small"],["md","Default"],["lg","Large"]].map(([size,label]) => {
+              const bs = buttonSizes[size];
+              return (
+                <div key={size} style={{ padding:"8px 10px", borderRadius:8, marginBottom:6, background: mode === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.04)" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:col }}>{label}</span>
+                    <button style={{ fontSize:11, fontWeight:600, padding:"2px 10px", borderRadius:t.rSm, background:t.primary, color:"white", border:"none", cursor:"pointer" }}>Aa</button>
+                  </div>
+                  <RangeRow label="Padding V" value={bs.py} min={2} max={20} unit="px" onChange={val => onButtonUpdate(size,"py",val)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+                  <RangeRow label="Padding H" value={bs.px} min={6} max={48} unit="px" onChange={val => onButtonUpdate(size,"px",val)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+                  <RangeRow label="Font Size" value={bs.fs} min={9} max={20} unit="px" onChange={val => onButtonUpdate(size,"fs",val)} text={col} sub={sub} primary={t.primary} bg={rangeBg} />
+                </div>
+              );
+            })}
+            <Divider sep={sep} />
             <SecLabel icon="zap" text="Shadow Strategy" sub={sub} />
             <div style={{ padding:"10px 12px", borderRadius:10, background: mode === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
@@ -760,6 +786,23 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
         )}
       </div>
 
+      {/* Import */}
+      <div style={{ padding:"8px 16px", borderTop:"1px solid " + sep }}>
+        <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"9px 0", borderRadius:t.rMd, border:"1.5px dashed " + sep, cursor:"pointer", color:sub, fontSize:12, fontWeight:600 }}>
+          <Icon name="download" size={13} color={sub} />
+          Import .html / .md
+          <input type="file" accept=".html,.md" style={{ display:"none" }} onChange={e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const ext = file.name.split(".").pop().toLowerCase();
+            const reader = new FileReader();
+            reader.onload = ev => onImportText(ev.target.result, ext);
+            reader.readAsText(file);
+            e.target.value = "";
+          }} />
+        </label>
+      </div>
+
       {/* Export */}
       <div style={{ padding:"12px 16px", borderTop:"1px solid " + sep, display:"flex", flexDirection:"column", gap:8 }}>
         <button className="btn" onClick={onExportHTML} style={{
@@ -769,6 +812,14 @@ function Sidebar({ mode, tokens, fonts, meta, onToggle, onUpdate, onFontUpdate, 
         }}>
           <Icon name="layers" size={15} color={mode === "light" ? "#0f172a" : "#e2e8f0"} />
           Export HTML
+        </button>
+        <button className="btn" onClick={onExportMD} style={{
+          width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          padding:"10px 0", borderRadius:t.rMd, border:"1.5px solid " + sep, cursor:"pointer",
+          background:"transparent", color:mode === "light" ? "#0f172a" : "#e2e8f0", fontSize:13, fontWeight:600,
+        }}>
+          <Icon name="type" size={15} color={mode === "light" ? "#0f172a" : "#e2e8f0"} />
+          Export MD
         </button>
         <button className="btn" onClick={onExport} style={{
           width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
@@ -852,18 +903,29 @@ function DocFontSpecimen({ t, mode, fonts }) {
   );
 }
 
-function DocTypeTable({ t, mode, fonts }) {
+const TYPO_SAMPLES_EN = {
+  h1:"Design Systems", h2:"Typography Scale", h3:"Font Specimen",
+  bodyL:"The quick brown fox jumps over the lazy dog.",
+  bodyM:"Typography is the art of arranging type.",
+  bodyS:"Good design is as little design as possible.",
+  caption:"Caption — 12pt · 140% line-height",
+};
+const TYPO_SAMPLES_JP = {
+  h1:"デザインシステム", h2:"タイポグラフィ", h3:"フォントスペシメン",
+  bodyL:"素早い茶色の狐は怠惰な犬を飛び越えます",
+  bodyM:"タイポグラフィは文字を美しく整える技術です",
+  bodyS:"良いデザインはできる限りシンプルです",
+  caption:"キャプション — 12pt · 140%行送り",
+};
+
+function DocTypeTable({ t, mode, fonts, typo }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const headerBg = mode === "light" ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.04)";
-  const rows = [
-    { pt:64, lh:"140%", sampleJP:"見出し大",           sampleEN:"Design Systems",   role:"Hero",    w:700 },
-    { pt:48, lh:"140%", sampleJP:"ページタイトル",     sampleEN:"Typography Scale", role:"h1",      w:700 },
-    { pt:32, lh:"140%", sampleJP:"セクション見出し",   sampleEN:"Font Specimen",    role:"h2",      w:600 },
-    { pt:18, lh:"180%", sampleJP:"素早い茶色の狐は怠惰な犬を飛び越えます", sampleEN:"The quick brown fox jumps over the lazy dog.", role:"Body L", w:400 },
-    { pt:16, lh:"160%", sampleJP:"タイポグラフィは文字を美しく整える技術です", sampleEN:"Typography is the art of arranging type.", role:"Body", w:400 },
-    { pt:14, lh:"160%", sampleJP:"良いデザインはできる限りシンプルです", sampleEN:"Good design is as little design as possible.", role:"Body S", w:400 },
-    { pt:12, lh:"140%", sampleJP:"キャプション — サイズ12pt · 行間140%", sampleEN:"Caption — 12pt · 140% line-height", role:"Caption", w:400 },
-  ];
+  const rows = Object.entries(typo).map(([key, v]) => ({
+    pt: v.pt, lh: v.lh+"%", w: v.w, role: v.label,
+    sampleEN: TYPO_SAMPLES_EN[key] || v.label,
+    sampleJP: TYPO_SAMPLES_JP[key] || v.label,
+  }));
   const cols = "80px 70px 1fr 90px";
   const hdCell = (label, last) => (
     <div style={{
@@ -991,12 +1053,14 @@ function DocSpacing({ t, mode }) {
 }
 
 /* ─── DocButtons ─── */
-function DocButtons({ t, mode }) {
+function DocButtons({ t, mode, buttonSizes }) {
+  const bs = buttonSizes || { sm:{py:4,px:10,fs:11}, md:{py:7,px:16,fs:13}, lg:{py:10,px:22,fs:15} };
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const border = "1px solid "+t.line;
   function Btn({ label, bg, color, bdr, icon, size }) {
-    const pad = size==="sm" ? "4px 10px" : size==="lg" ? "10px 22px" : "7px 16px";
-    const fs  = size==="sm" ? 11 : size==="lg" ? 15 : 13;
+    const s = size==="sm" ? bs.sm : size==="lg" ? bs.lg : bs.md;
+    const pad = `${s.py}px ${s.px}px`;
+    const fs  = s.fs;
     return (
       <button style={{ background:bg, color, border:bdr||"none", padding:pad, borderRadius:t.rSm, fontSize:fs, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
         {icon && <Icon name={icon} size={fs} color={color} />}
@@ -1188,7 +1252,7 @@ function DocNav({ t, mode }) {
 }
 
 /* ─── DocPreview ─── */
-function DocPreview({ t, mode, fonts, meta }) {
+function DocPreview({ t, mode, fonts, meta, typo, buttonSizes }) {
   const sub = mode === "light" ? "#94a3b8" : "#64748b";
   const sec = (n, title, desc) => (
     <DocSectionHeader num={n} title={title} desc={desc} textColor={t.text} subColor={sub} lineColor={t.line} />
@@ -1206,7 +1270,7 @@ function DocPreview({ t, mode, fonts, meta }) {
       <section style={{ marginBottom:80 }}>
         {sec("02","Typography","Japanese: "+fonts.ja.name+" · Latin: "+fonts.en.name+". Use only the sizes and line heights in the table below.")}
         <DocFontSpecimen t={t} mode={mode} fonts={fonts} />
-        <DocTypeTable   t={t} mode={mode} fonts={fonts} />
+        <DocTypeTable   t={t} mode={mode} fonts={fonts} typo={typo} />
       </section>
 
       <section style={{ marginBottom:80 }}>
@@ -1216,7 +1280,7 @@ function DocPreview({ t, mode, fonts, meta }) {
 
       <section style={{ marginBottom:80 }}>
         {sec("04","Buttons","4 variants × 3 sizes. No border radius · No shadow.")}
-        <DocButtons t={t} mode={mode} />
+        <DocButtons t={t} mode={mode} buttonSizes={buttonSizes} />
       </section>
 
       <section style={{ marginBottom:80 }}>
@@ -1337,7 +1401,7 @@ const SPECIMEN_JP = {
   caption: "キャプション — 12pt · 140%行送り",
 };
 
-function TypoSpecimen({ t, mode, font, lang, specimens, accentColor, accentBg, label }) {
+function TypoSpecimen({ t, mode, font, lang, specimens, accentColor, accentBg, label, typo }) {
   const sep     = t.line;
   const subText = mode === "light" ? "#94a3b8" : "#64748b";
   const border  = "1px solid " + t.line;
@@ -1348,7 +1412,7 @@ function TypoSpecimen({ t, mode, font, lang, specimens, accentColor, accentBg, l
     return font.weights.reduce((a, b) => Math.abs(b - target) < Math.abs(a - target) ? b : a);
   }
 
-  const entries = Object.entries(TYPO);
+  const entries = Object.entries(typo || TYPO);
 
   return (
     <div style={{
@@ -1422,7 +1486,7 @@ function TypoSpecimen({ t, mode, font, lang, specimens, accentColor, accentBg, l
   );
 }
 
-function PvTypo({ t, mode, fonts }) {
+function PvTypo({ t, mode, fonts, typo }) {
   const enColor   = mode === "light" ? "#2563eb" : "#60a5fa";
   const enBg      = mode === "light" ? "rgba(239,246,255,0.8)" : "rgba(96,165,250,0.08)";
   const jpColor   = mode === "light" ? "#16a34a" : "#4ade80";
@@ -1443,6 +1507,7 @@ function PvTypo({ t, mode, fonts }) {
           specimens={SPECIMEN_EN}
           label="EN 欧文"
           accentColor={enColor} accentBg={enBg}
+          typo={typo}
         />
         <TypoSpecimen
           t={t} mode={mode}
@@ -1450,6 +1515,7 @@ function PvTypo({ t, mode, fonts }) {
           specimens={SPECIMEN_JP}
           label="JP 和文"
           accentColor={jpColor} accentBg={jpBg}
+          typo={typo}
         />
       </div>
     </div>
@@ -1622,6 +1688,12 @@ function App() {
   const [tokens, setTokens] = React.useState(DEFAULT);
   const [fonts, setFonts]   = React.useState(DEFAULT_FONTS);
   const [meta, setMeta]     = React.useState({ name: "Design System", company: "" });
+  const [typo, setTypo]     = React.useState(TYPO);
+  const [buttonSizes, setButtonSizes] = React.useState({
+    sm: { py:4,  px:10, fs:11 },
+    md: { py:7,  px:16, fs:13 },
+    lg: { py:10, px:22, fs:15 },
+  });
   const [presets, setPresets] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem("dsm_presets") || "[]"); }
     catch { return []; }
@@ -1652,12 +1724,120 @@ function App() {
     setPresets(prev => prev.filter(p => p.id !== id));
   }
 
+  function parseHTMLImport(text) {
+    const match = text.match(/<script[^>]*id="design-system-tokens"[^>]*>([\s\S]*?)<\/script>/);
+    if (!match) return null;
+    try {
+      const d = JSON.parse(match[1]);
+      const r = d.borderRadius || {};
+      return {
+        meta: { name: d.meta?.name || "", company: d.meta?.company || "" },
+        tokens: {
+          light: { primary:d.colors?.light?.primary, secondary:d.colors?.light?.secondary, background:d.colors?.light?.background, text:d.colors?.light?.text, subtext:d.colors?.light?.subtext, line:d.colors?.light?.line, rSm:r.sm?.valuePx, rMd:r.md?.valuePx, rLg:r.lg?.valuePx },
+          dark:  { primary:d.colors?.dark?.primary,  secondary:d.colors?.dark?.secondary,  background:d.colors?.dark?.background,  text:d.colors?.dark?.text,  subtext:d.colors?.dark?.subtext,  line:d.colors?.dark?.line,  rSm:r.sm?.valuePx, rMd:r.md?.valuePx, rLg:r.lg?.valuePx },
+        },
+        fonts: {
+          ja: d.typography?.fonts?.japanese ? { name: d.typography.fonts.japanese.name, weights: d.typography.fonts.japanese.weights } : null,
+          en: d.typography?.fonts?.latin    ? { name: d.typography.fonts.latin.name,    weights: d.typography.fonts.latin.weights    } : null,
+        },
+      };
+    } catch { return null; }
+  }
+
+  function parseMDImport(text) {
+    const lines = text.split("\n");
+    const titleLine = lines.find(l => l.startsWith("# "));
+    const name = titleLine ? titleLine.slice(2).trim() : "";
+    const companyLine = lines.find(l => /^\*\*[^*]+\*\*$/.test(l.trim()));
+    const company = companyLine ? companyLine.trim().replace(/^\*\*|\*\*$/g, "") : "";
+
+    const tokenMap = { "--color-primary":"primary", "--color-secondary":"secondary", "--color-bg":"background", "--color-text":"text", "--color-subtext":"subtext", "--color-line":"line" };
+    const lightColors = {}, darkColors = {};
+    let inColorTable = false;
+    for (const line of lines) {
+      if (line.includes("| Token | Light | Dark | Role |")) { inColorTable = true; continue; }
+      if (inColorTable) {
+        if (line.startsWith("|---")) continue;
+        if (!line.startsWith("|")) { inColorTable = false; continue; }
+        const cells = line.split("|").map(c => c.trim().replace(/`/g,"")).filter(Boolean);
+        if (cells.length >= 3) {
+          const field = tokenMap[cells[0]];
+          if (field) { lightColors[field] = cells[1]; darkColors[field] = cells[2]; }
+        }
+      }
+    }
+
+    let rSm, rMd, rLg, rSmD, rMdD, rLgD;
+    let inRadiusTable = false;
+    for (const line of lines) {
+      if (line.includes("| Size | Light | Dark |")) { inRadiusTable = true; continue; }
+      if (inRadiusTable) {
+        if (line.startsWith("|---")) continue;
+        if (!line.startsWith("|")) { inRadiusTable = false; continue; }
+        const cells = line.split("|").map(c => c.trim().replace(/`/g,"")).filter(Boolean);
+        if (cells[0]?.startsWith("Small"))  { rSm  = parseInt(cells[1]); rSmD = parseInt(cells[2]); }
+        if (cells[0]?.startsWith("Medium")) { rMd  = parseInt(cells[1]); rMdD = parseInt(cells[2]); }
+        if (cells[0]?.startsWith("Large"))  { rLg  = parseInt(cells[1]); rLgD = parseInt(cells[2]); }
+      }
+    }
+
+    const jaLine = lines.find(l => l.includes("**Japanese font:**"));
+    const enLine = lines.find(l => l.includes("**English font:**"));
+    let jaFont = null, enFont = null;
+    if (jaLine) { const m = jaLine.match(/\*\*Japanese font:\*\* ([^(]+)\(weights: ([^)]+)\)/); if (m) jaFont = { name: m[1].trim(), weights: m[2].split(",").map(w => parseInt(w.trim())) }; }
+    if (enLine) { const m = enLine.match(/\*\*English font:\*\* ([^(]+)\(weights: ([^)]+)\)/); if (m) enFont = { name: m[1].trim(), weights: m[2].split(",").map(w => parseInt(w.trim())) }; }
+
+    const labelToKey = { "Heading 1":"h1","Heading 2":"h2","Heading 3":"h3","Body Large":"bodyL","Body Medium":"bodyM","Body Small":"bodyS","Caption":"caption" };
+    const newTypo = {};
+    let inTypoTable = false;
+    for (const line of lines) {
+      if (line.includes("| Style | pt | px | Line Height | Weight | Family |")) { inTypoTable = true; continue; }
+      if (inTypoTable) {
+        if (line.startsWith("|---")) continue;
+        if (!line.startsWith("|")) { inTypoTable = false; continue; }
+        const cells = line.split("|").map(c => c.trim().replace(/`/g,"")).filter(Boolean);
+        if (cells.length >= 5) {
+          const key = labelToKey[cells[0]];
+          if (key) newTypo[key] = { label: cells[0], pt: parseInt(cells[1]), lh: parseInt(cells[3]), w: parseInt(cells[4]) };
+        }
+      }
+    }
+
+    const result = { meta: { name, company } };
+    if (Object.keys(lightColors).length) result.tokens = { light: { ...lightColors, ...(rSm !== undefined ? { rSm, rMd, rLg } : {}) }, dark: { ...darkColors, ...(rSmD !== undefined ? { rSm:rSmD, rMd:rMdD, rLg:rLgD } : {}) } };
+    if (jaFont || enFont) result.fonts = { ja: jaFont, en: enFont };
+    if (Object.keys(newTypo).length) result.typo = newTypo;
+    return result;
+  }
+
+  function importText(text, ext) {
+    const data = ext === "html" ? parseHTMLImport(text) : parseMDImport(text);
+    if (!data) { alert("インポートに失敗しました。対応フォーマットか確認してください。"); return; }
+    if (data.meta) setMeta(data.meta);
+    if (data.tokens) setTokens(prev => ({
+      light: { ...prev.light, ...Object.fromEntries(Object.entries(data.tokens.light).filter(([,v]) => v !== undefined)) },
+      dark:  { ...prev.dark,  ...Object.fromEntries(Object.entries(data.tokens.dark ).filter(([,v]) => v !== undefined)) },
+    }));
+    if (data.fonts) setFonts(prev => ({
+      ja: data.fonts.ja ? { ...prev.ja, ...data.fonts.ja } : prev.ja,
+      en: data.fonts.en ? { ...prev.en, ...data.fonts.en } : prev.en,
+    }));
+    if (data.typo) setTypo(prev => ({ ...prev, ...data.typo }));
+  }
+
   const t = tokens[mode];
 
   function toggleMode() { setMode(m => m === "light" ? "dark" : "light"); }
 
   function updateToken(key, value) {
     setTokens(prev => ({ ...prev, [mode]: { ...prev[mode], [key]: value } }));
+  }
+
+  function updateTypo(key, field, val) {
+    setTypo(prev => ({ ...prev, [key]: { ...prev[key], [field]: val } }));
+  }
+  function updateButtonSize(size, field, val) {
+    setButtonSizes(prev => ({ ...prev, [size]: { ...prev[size], [field]: val } }));
   }
 
   function updateFont(key, value) {
@@ -1866,6 +2046,78 @@ ${JSON.stringify(tokenData, null, 2)}
     URL.revokeObjectURL(a.href);
   }
 
+  function exportMarkdown() {
+    const l = tokens.light;
+    const d = tokens.dark;
+    const now = new Date().toISOString();
+    const slug = (meta.name || "design-system").toLowerCase().replace(/\s+/g,"-");
+
+    const colorRows = [
+      { token:"--color-primary",   light:l.primary,    dark:d.primary,    role:"Primary brand color" },
+      { token:"--color-secondary", light:l.secondary,  dark:d.secondary,  role:"Secondary brand color" },
+      { token:"--color-bg",        light:l.background, dark:d.background, role:"Page / surface background" },
+      { token:"--color-text",      light:l.text,       dark:d.text,       role:"Primary text" },
+      { token:"--color-subtext",   light:l.subtext,    dark:d.subtext,    role:"Secondary / muted text" },
+      { token:"--color-line",      light:l.line,       dark:d.line,       role:"Borders and dividers" },
+    ];
+
+    const typeRows = Object.entries(typo).map(([k,v]) => ({
+      label: v.label, pt: v.pt, px: ptPx(v.pt), lh: v.lh, weight: v.w,
+      family: k.startsWith("h") ? fonts.en.name : fonts.ja.name,
+    }));
+
+    const spacing = [4,8,16,24,40,56,72,96];
+
+    const md = [
+      `# ${meta.name || "Design System"}`,
+      meta.company ? `**${meta.company}**` : "",
+      `Exported: ${now}`,
+      "",
+      "---",
+      "",
+      "## 01 · Colors",
+      "",
+      "| Token | Light | Dark | Role |",
+      "|-------|-------|------|------|",
+      ...colorRows.map(r => `| \`${r.token}\` | \`${r.light}\` | \`${r.dark}\` | ${r.role} |`),
+      "",
+      "### Border Radius",
+      "",
+      "| Size | Light | Dark |",
+      "|------|-------|------|",
+      `| Small  | \`${l.rSm}\` | \`${d.rSm}\` |`,
+      `| Medium | \`${l.rMd}\` | \`${d.rMd}\` |`,
+      `| Large  | \`${l.rLg}\` | \`${d.rLg}\` |`,
+      "",
+      "---",
+      "",
+      "## 02 · Typography",
+      "",
+      `- **Japanese font:** ${fonts.ja.name} (weights: ${fonts.ja.weights.join(", ")})`,
+      `- **English font:** ${fonts.en.name} (weights: ${fonts.en.weights.join(", ")})`,
+      "",
+      "| Style | pt | px | Line Height | Weight | Family |",
+      "|-------|----|----|-------------|--------|--------|",
+      ...typeRows.map(r => `| ${r.label} | ${r.pt}pt | ${r.px}px | ${r.lh}% | ${r.weight} | ${r.family} |`),
+      "",
+      "---",
+      "",
+      "## 03 · Spacing",
+      "",
+      "| Token | Value |",
+      "|-------|-------|",
+      ...spacing.map((s,i) => `| \`--space-${i+1}\` | \`${s}px\` |`),
+      "",
+    ].join("\n");
+
+    const blob = new Blob([md], { type:"text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = slug + "-spec.md";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   function exportJSON() {
     const out = {
       version: "1.0.0",
@@ -1876,7 +2128,7 @@ ${JSON.stringify(tokenData, null, 2)}
         en: { name: fonts.en.name, weights: fonts.en.weights },
       },
       typography: Object.fromEntries(
-        Object.entries(TYPO).map(([k,v]) => [k, {
+        Object.entries(typo).map(([k,v]) => [k, {
           label:v.label, pt:v.pt, px:ptPx(v.pt), lineHeight:v.lh+"%", fontWeight:v.w,
           fontFamily: k.startsWith("h") ? fonts.en : fonts.ja,
         }])
@@ -1901,7 +2153,7 @@ ${JSON.stringify(tokenData, null, 2)}
   return (
     <div className="theme-root" style={{ display:"flex", height:"100vh", overflow:"hidden", background:t.background }}>
 
-      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} presets={presets} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
+      <Sidebar mode={mode} tokens={tokens} fonts={fonts} meta={meta} onToggle={toggleMode} onUpdate={updateToken} onFontUpdate={updateFont} onMetaUpdate={(k,v) => setMeta(p => ({...p,[k]:v}))} onExport={exportJSON} onExportHTML={exportHTML} onExportMD={exportMarkdown} onImportText={importText} presets={presets} typo={typo} onTypoUpdate={updateTypo} buttonSizes={buttonSizes} onButtonUpdate={updateButtonSize} onSavePreset={savePreset} onLoadPreset={loadPreset} onDeletePreset={deletePreset} />
 
       {/* Preview Panel */}
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -1938,7 +2190,7 @@ ${JSON.stringify(tokenData, null, 2)}
 
         {/* Scrollable preview */}
         <div style={{ flex:1, overflowY:"auto", padding:"0 48px", background:t.background }}>
-          <DocPreview t={t} mode={mode} fonts={fonts} meta={meta} />
+          <DocPreview t={t} mode={mode} fonts={fonts} meta={meta} typo={typo} buttonSizes={buttonSizes} />
         </div>
       </div>
     </div>
